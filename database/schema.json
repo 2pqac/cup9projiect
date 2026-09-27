@@ -1,0 +1,570 @@
+{
+  "database": "Chinook",
+  "tables": {
+    "Album": {
+      "columns": [
+        {
+          "name": "AlbumId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "Title",
+          "type": "NVARCHAR(160)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "ArtistId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "ArtistId",
+          "to_table": "Artist",
+          "to_column": "ArtistId"
+        }
+      ]
+    },
+    "Artist": {
+      "columns": [
+        {
+          "name": "ArtistId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "Name",
+          "type": "NVARCHAR(120)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    "Customer": {
+      "columns": [
+        {
+          "name": "CustomerId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "FirstName",
+          "type": "NVARCHAR(40)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "LastName",
+          "type": "NVARCHAR(20)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Company",
+          "type": "NVARCHAR(80)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Address",
+          "type": "NVARCHAR(70)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "City",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "State",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Country",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "PostalCode",
+          "type": "NVARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Phone",
+          "type": "NVARCHAR(24)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Fax",
+          "type": "NVARCHAR(24)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Email",
+          "type": "NVARCHAR(60)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "SupportRepId",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "SupportRepId",
+          "to_table": "Employee",
+          "to_column": "EmployeeId"
+        }
+      ]
+    },
+    "Employee": {
+      "columns": [
+        {
+          "name": "EmployeeId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "LastName",
+          "type": "NVARCHAR(20)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "FirstName",
+          "type": "NVARCHAR(20)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Title",
+          "type": "NVARCHAR(30)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "ReportsTo",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "BirthDate",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "HireDate",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Address",
+          "type": "NVARCHAR(70)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "City",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "State",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Country",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "PostalCode",
+          "type": "NVARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Phone",
+          "type": "NVARCHAR(24)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Fax",
+          "type": "NVARCHAR(24)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Email",
+          "type": "NVARCHAR(60)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "ReportsTo",
+          "to_table": "Employee",
+          "to_column": "EmployeeId"
+        }
+      ]
+    },
+    "Genre": {
+      "columns": [
+        {
+          "name": "GenreId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "Name",
+          "type": "NVARCHAR(120)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    "Invoice": {
+      "columns": [
+        {
+          "name": "InvoiceId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "CustomerId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "InvoiceDate",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "BillingAddress",
+          "type": "NVARCHAR(70)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "BillingCity",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "BillingState",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "BillingCountry",
+          "type": "NVARCHAR(40)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "BillingPostalCode",
+          "type": "NVARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Total",
+          "type": "NUMERIC(10,2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "CustomerId",
+          "to_table": "Customer",
+          "to_column": "CustomerId"
+        }
+      ]
+    },
+    "InvoiceLine": {
+      "columns": [
+        {
+          "name": "InvoiceLineId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "InvoiceId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "TrackId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "UnitPrice",
+          "type": "NUMERIC(10,2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Quantity",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "TrackId",
+          "to_table": "Track",
+          "to_column": "TrackId"
+        },
+        {
+          "from_column": "InvoiceId",
+          "to_table": "Invoice",
+          "to_column": "InvoiceId"
+        }
+      ]
+    },
+    "MediaType": {
+      "columns": [
+        {
+          "name": "MediaTypeId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "Name",
+          "type": "NVARCHAR(120)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    "Playlist": {
+      "columns": [
+        {
+          "name": "PlaylistId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "Name",
+          "type": "NVARCHAR(120)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    "PlaylistTrack": {
+      "columns": [
+        {
+          "name": "PlaylistId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "TrackId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "TrackId",
+          "to_table": "Track",
+          "to_column": "TrackId"
+        },
+        {
+          "from_column": "PlaylistId",
+          "to_table": "Playlist",
+          "to_column": "PlaylistId"
+        }
+      ]
+    },
+    "Track": {
+      "columns": [
+        {
+          "name": "TrackId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "Name",
+          "type": "NVARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "AlbumId",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "MediaTypeId",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "GenreId",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Composer",
+          "type": "NVARCHAR(220)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Milliseconds",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "Bytes",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "UnitPrice",
+          "type": "NUMERIC(10,2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "MediaTypeId",
+          "to_table": "MediaType",
+          "to_column": "MediaTypeId"
+        },
+        {
+          "from_column": "GenreId",
+          "to_table": "Genre",
+          "to_column": "GenreId"
+        },
+        {
+          "from_column": "AlbumId",
+          "to_table": "Album",
+          "to_column": "AlbumId"
+        }
+      ]
+    }
+  }
+}
