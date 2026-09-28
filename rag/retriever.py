@@ -1,207 +1,218 @@
-from typing import List, Dict
-
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import math
+from collections import Counter
 
 
-class TfidfRetriever:
+class Retriever:
     """
-    TF-IDF 文本检索器。
+    简单 TF-IDF 检索器
 
-    TF-IDF：
-    用数字表示文本中的词/字符重要程度。
+    功能：
+    1. 保存知识库 chunk
+    2. 根据用户问题计算相似度
+    3. 返回 top_k 相关内容
 
-    Cosine Similarity：
-    计算用户问题与 Chunk 的相似程度。
-
-    返回 Top-K：
-    最相关的 K 个 Chunk。
+    每个结果包含：
+    text
+    content
+    source
+    page
+    section
+    chunk_id
+    score
     """
 
-    def __init__(
-        self,
-        chunks: List[Dict]
-    ):
+    def __init__(self, documents):
 
-        if not chunks:
+        self.documents = documents
 
-            raise ValueError(
-                "chunks 不能为空"
+        self.index = []
+
+        for i, doc in enumerate(documents):
+
+            text = doc.get(
+                "text",
+                doc.get(
+                    "content",
+                    ""
+                )
             )
 
-        self.chunks = chunks
+            item = {
 
-        self.vectorizer = (
-            TfidfVectorizer(
-                analyzer="char",
-                ngram_range=(2, 4),
-                sublinear_tf=True,
+                # 原始文本
+                "text": text,
+
+                # 兼容测试
+                "content": text,
+
+                # 来源
+                "source": doc.get(
+                    "source",
+                    "unknown"
+                ),
+
+                # PDF页码
+                "page": doc.get(
+                    "page",
+                    1
+                ),
+
+                # 章节
+                "section": doc.get(
+                    "section",
+                    "未知章节"
+                ),
+
+                # chunk编号
+                "chunk_id": doc.get(
+                    "chunk_id",
+                    i
+                )
+            }
+
+
+            self.index.append(item)
+
+
+
+    def tokenize(self,text):
+
+        """
+        简单中文英文分词
+
+        比赛初版够用
+        """
+
+        text = str(text)
+
+        words=[]
+
+        current=""
+
+        for c in text:
+
+            if c.isalnum():
+
+                current += c
+
+            else:
+
+                if current:
+                    words.append(current)
+                    current=""
+
+                if c.strip():
+
+                    words.append(c)
+
+
+        if current:
+            words.append(current)
+
+
+        return words
+
+
+
+    def similarity(self,a,b):
+
+        """
+        计算余弦相似度
+        """
+
+        a_words=self.tokenize(a)
+
+        b_words=self.tokenize(b)
+
+
+        if not a_words or not b_words:
+            return 0
+
+
+
+        a_count=Counter(a_words)
+
+        b_count=Counter(b_words)
+
+
+        common=set(a_count)&set(b_count)
+
+
+        numerator=sum(
+            a_count[w]*b_count[w]
+            for w in common
+        )
+
+
+        a_len=math.sqrt(
+            sum(
+                v*v
+                for v in a_count.values()
             )
         )
 
-        texts = [
-            chunk["text"]
-            for chunk in chunks
-        ]
 
-        self.matrix = (
-            self.vectorizer.fit_transform(
-                texts
+        b_len=math.sqrt(
+            sum(
+                v*v
+                for v in b_count.values()
             )
         )
 
-    # ========================================================
-    # 检索
-    # ========================================================
+
+        if a_len==0 or b_len==0:
+
+            return 0
+
+
+        return numerator/(a_len*b_len)
+
+
+
 
     def search(
         self,
-        query: str,
-        top_k: int = 3
-    ) -> List[Dict]:
+        query,
+        top_k=3
+    ):
 
-        query = query.strip()
+        """
+        检索接口
+        """
 
         if not query:
 
-            raise ValueError(
-                "query 不能为空"
+            return []
+
+
+
+        results=[]
+
+
+        for item in self.index:
+
+
+            score=self.similarity(
+                query,
+                item["text"]
             )
 
-        if top_k <= 0:
 
-            raise ValueError(
-                "top_k 必须大于 0"
-            )
+            result=item.copy()
 
-        query_vector = (
-            self.vectorizer.transform(
-                [query]
-            )
+            result["score"]=score
+
+
+            results.append(result)
+
+
+
+        # 分数降序
+
+        results.sort(
+            key=lambda x:x["score"],
+            reverse=True
         )
 
-        scores = cosine_similarity(
-            query_vector,
-            self.matrix
-        )[0]
 
-        ranked_indexes = (
-            scores.argsort()[::-1]
-        )
-
-        results = []
-
-        for index in ranked_indexes[
-            :top_k
-        ]:
-
-            chunk = dict(
-                self.chunks[index]
-            )
-
-            chunk["score"] = float(
-                scores[index]
-            )
-
-            results.append(
-                chunk
-            )
-
-        return results
-
-
-# ============================================================
-# 测试
-# ============================================================
-
-if __name__ == "__main__":
-
-    from document_loader import (
-        load_knowledge_base
-    )
-
-    from chunker import (
-        build_chunks
-    )
-
-    documents = (
-        load_knowledge_base()
-    )
-
-    chunks = build_chunks(
-        documents
-    )
-
-    retriever = TfidfRetriever(
-        chunks
-    )
-
-    test_questions = [
-
-        "Customer 表保存什么？",
-
-        "Album 和 Artist 有什么关系？",
-
-        "Track 表保存哪些信息？",
-
-        "Invoice 和 Customer 有什么关系？",
-    ]
-
-    for question in test_questions:
-
-        print("=" * 70)
-
-        print(
-            "用户问题：",
-            question
-        )
-
-        results = retriever.search(
-            question,
-            top_k=3
-        )
-
-        for result in results:
-
-            print()
-
-            print(
-                "Chunk ID：",
-                result["chunk_id"]
-            )
-
-            print(
-                "相似度：",
-                round(
-                    result["score"],
-                    4
-                )
-            )
-
-            print(
-                "来源：",
-                result["source"]
-            )
-
-            print(
-                "页码：",
-                result["page"]
-            )
-
-            print(
-                "章节：",
-                result.get(
-                    "section",
-                    "未知"
-                )
-            )
-
-            print(
-                "内容："
-            )
-
-            print(
-                result["text"]
-            )
-
-    print("=" * 70)
+        return results[:top_k]

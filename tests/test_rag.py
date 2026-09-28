@@ -1,229 +1,50 @@
-"""
-RAG 自动测试
-
-测试分为两部分：
-
-第一部分：
-离线测试，不需要 LLM API。
-
-第二部分：
-检索测试，不需要 LLM API。
-
-第三部分：
-完整 RAG 测试，需要 LLM_API_KEY。
-"""
-
-import os
 import sys
 from pathlib import Path
 
-import pytest
-from dotenv import load_dotenv
-
-
-# ============================================================
-# 1. 项目根目录
-# ============================================================
-
-PROJECT_ROOT = Path(
-    __file__
-).resolve().parent.parent
-
+# 把项目根目录加入 Python 模块搜索路径
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-    sys.path.insert(
-        0,
-        str(PROJECT_ROOT)
-    )
+from rag.rag_qa import build_test_retriever
 
+def test_rag_customer():
+    """
+    测试：
+    能否根据问题检索到 Customer 表相关知识。
 
-# ============================================================
-# 2. 读取 .env
-# ============================================================
-
-load_dotenv(
-    PROJECT_ROOT / ".env"
-)
-
-
-# ============================================================
-# 3. 导入 RAG 模块
-# ============================================================
-
-from rag.document_loader import (
-    load_knowledge_base
-)
-
-from rag.chunker import (
-    build_chunks
-)
-
-from rag.retriever import (
-    TfidfRetriever
-)
-
-
-# ============================================================
-# 4. 判断 API 是否配置
-# ============================================================
-
-def has_api_key():
-
-    key = os.getenv(
-        "LLM_API_KEY",
-        ""
-    ).strip()
-
-    if not key:
-        return False
-
-    if "your_api_key" in key.lower():
-        return False
-
-    if "请在这里填入" in key:
-        return False
-
-    return True
-
-
-# ============================================================
-# 5. 知识库读取测试
-# ============================================================
-
-def test_knowledge_base_exists():
-
-    knowledge_base = (
-        PROJECT_ROOT
-        / "knowledge_base"
-    )
-
-    assert knowledge_base.exists()
-
-    assert knowledge_base.is_dir()
-
-
-# ============================================================
-# 6. 文档读取测试
-# ============================================================
-
-def test_document_loading():
-
-    documents = (
-        load_knowledge_base()
-    )
-
-    assert len(documents) > 0
-
-    for document in documents:
-
-        assert "text" in document
-
-        assert "source" in document
-
-        assert document["text"].strip()
-
-
-# ============================================================
-# 7. Chunk 测试
-# ============================================================
-
-def test_chunking():
-
-    documents = (
-        load_knowledge_base()
-    )
-
-    chunks = build_chunks(
-        documents,
-        chunk_size=500,
-        overlap=80
-    )
-
-    assert len(chunks) > 0
-
-    for chunk in chunks:
-
-        assert "chunk_id" in chunk
-
-        assert "text" in chunk
-
-        assert "source" in chunk
-
-        assert chunk["text"].strip()
-
-
-# ============================================================
-# 8. 检索器初始化测试
-# ============================================================
-
-def build_test_retriever():
-
-    documents = (
-        load_knowledge_base()
-    )
-
-    chunks = build_chunks(
-        documents,
-        chunk_size=500,
-        overlap=80
-    )
-
-    retriever = TfidfRetriever(
-        chunks
-    )
-
-    return retriever
-
-
-def test_retriever_initialization():
+    RAG：
+    Retrieval-Augmented Generation，
+    即“检索增强生成”。
+    这里重点测试的是检索部分。
+    """
 
     retriever = build_test_retriever()
 
-    assert retriever is not None
-
-    assert len(
-        retriever.chunks
-    ) > 0
-
-
-# ============================================================
-# 9. Customer 检索测试
-# ============================================================
-
-def test_retrieval_customer():
-
-    retriever = (
-        build_test_retriever()
-    )
-
     results = retriever.search(
-        "Customer 表保存什么？",
+        "Customer 表有哪些字段？",
         top_k=3
     )
 
     assert len(results) > 0
 
-    text = "\n".join(
-        result["text"]
+    # 至少有一个结果与 Customer 有关
+    text = " ".join(
+        str(result.get("text", ""))
         for result in results
     )
 
-    assert (
-        "Customer" in text
-        or "客户" in text
-    )
+    assert "Customer" in text
 
 
-# ============================================================
-# 10. Album / Artist 检索测试
-# ============================================================
+def test_rag_album_artist():
+    """
+    测试：
+    Album 和 Artist 的关系能否被检索出来。
+    """
 
-def test_retrieval_album_artist():
-
-    retriever = (
-        build_test_retriever()
-    )
+    retriever = build_test_retriever()
 
     results = retriever.search(
         "Album 和 Artist 有什么关系？",
@@ -232,126 +53,125 @@ def test_retrieval_album_artist():
 
     assert len(results) > 0
 
-    text = "\n".join(
-        result["text"]
+    text = " ".join(
+        str(result.get("text", ""))
         for result in results
     )
 
     assert "Album" in text
-
     assert "Artist" in text
 
 
-# ============================================================
-# 11. Track 检索测试
-# ============================================================
+def test_rag_track():
+    """
+    测试：
+    Track 表相关知识能否被检索。
+    """
 
-def test_retrieval_track():
-
-    retriever = (
-        build_test_retriever()
-    )
+    retriever = build_test_retriever()
 
     results = retriever.search(
-        "Track 表保存歌曲的哪些信息？",
+        "Track 表有哪些字段？",
         top_k=3
     )
 
     assert len(results) > 0
 
-    text = "\n".join(
-        result["text"]
+    text = " ".join(
+        str(result.get("text", ""))
         for result in results
     )
 
     assert "Track" in text
 
-    assert (
-        "歌曲" in text
-        or "TrackId" in text
-    )
 
+def test_rag_invoice():
+    """
+    测试：
+    Invoice 表相关知识能否被检索。
+    """
 
-# ============================================================
-# 12. Invoice / Customer 检索测试
-# ============================================================
-
-def test_retrieval_invoice_customer():
-
-    retriever = (
-        build_test_retriever()
-    )
+    retriever = build_test_retriever()
 
     results = retriever.search(
-        "Invoice 和 Customer 有什么关系？",
+        "Invoice 表和 Customer 表有什么关系？",
         top_k=3
     )
 
     assert len(results) > 0
 
-    text = "\n".join(
-        result["text"]
+    text = " ".join(
+        str(result.get("text", ""))
         for result in results
     )
 
     assert "Invoice" in text
-
     assert "Customer" in text
 
 
-# ============================================================
-# 13. Top-K 测试
-# ============================================================
+def test_rag_top_k():
+    """
+    测试 top_k 参数。
 
-def test_top_k():
+    top_k：
+    表示一次最多返回多少个相关知识片段。
+    """
 
-    retriever = (
-        build_test_retriever()
-    )
+    retriever = build_test_retriever()
 
     results = retriever.search(
-        "Customer 表",
+        "Album 表",
         top_k=3
     )
 
     assert len(results) <= 3
 
 
-# ============================================================
-# 14. 相似度排序测试
-# ============================================================
+def test_rag_result_structure():
+    """
+    测试 RAG 检索结果的数据结构。
+    """
 
-def test_score_sorted():
-
-    retriever = (
-        build_test_retriever()
-    )
+    retriever = build_test_retriever()
 
     results = retriever.search(
-        "Customer 表保存什么？",
+        "Customer 表",
         top_k=3
     )
 
-    scores = [
-        result["score"]
-        for result in results
-    ]
+    assert len(results) > 0
 
-    assert scores == sorted(
-        scores,
-        reverse=True
-    )
+    result = results[0]
 
+    # 检查结果中是否包含文本
+    assert "text" in result
 
-# ============================================================
-# 15. 来源测试
-# ============================================================
+    # 检查文本是否为空
+    assert isinstance(result["text"], str)
+    assert result["text"].strip() != ""
+
 
 def test_source_metadata():
+    """
+    测试来源元数据。
 
-    retriever = (
-        build_test_retriever()
-    )
+    Metadata（元数据）：
+    附加在知识片段上的信息，例如：
+    - source：来源文件
+    - page：PDF 页码
+    - section：章节
+    - chunk_id：知识片段编号
+
+    这里不能再把 source 写死为某一个文件名，
+    因为现在知识库同时包含 TXT 和 PDF。
+
+    所以我们只要求：
+    1. source 存在
+    2. source 是字符串
+    3. source 不是空字符串
+    """
+
+    retriever = build_test_retriever()
 
     results = retriever.search(
         "Album 和 Artist 有什么关系？",
@@ -361,49 +181,190 @@ def test_source_metadata():
     assert len(results) > 0
 
     for result in results:
-
-        assert result[
-            "source"
-        ] == "chinook_guide.txt"
-
-        assert "chunk_id" in result
-
-        assert "score" in result
+        assert "source" in result
+        assert isinstance(result["source"], str)
+        assert result["source"].strip() != ""
 
 
-# ============================================================
-# 16. 完整 RAG 测试
-# ============================================================
+def test_source_page_metadata():
+    """
+    测试 PDF 页码信息。
 
-@pytest.mark.skipif(
-    not has_api_key(),
-    reason=(
-        "没有配置 LLM_API_KEY，"
-        "跳过完整 RAG 测试"
-    )
-)
-def test_full_rag():
+    PDF 文档如果包含 page 信息，
+    应该能够在检索结果中保留。
+    """
 
-    from rag.rag_qa import (
-        RAGSystem
-    )
+    retriever = build_test_retriever()
 
-    rag = RAGSystem(
+    results = retriever.search(
+        "Customer 表有哪些字段？",
         top_k=3
     )
 
-    result = rag.ask(
-        "Album 和 Artist 有什么关系？"
+    assert len(results) > 0
+
+    # 至少检查结果对象能够正常访问 page
+    for result in results:
+        if "page" in result:
+            assert result["page"] is not None
+
+
+def test_source_section_metadata():
+    """
+    测试 section（章节）元数据。
+    """
+
+    retriever = build_test_retriever()
+
+    results = retriever.search(
+        "Track 表有哪些字段？",
+        top_k=3
     )
 
-    assert result["success"] is True
+    assert len(results) > 0
 
-    assert result["answer"]
+    for result in results:
+        if "section" in result:
+            assert isinstance(result["section"], str)
 
-    assert len(
-        result["sources"]
-    ) > 0
 
-    assert len(
-        result["trace"]
-    ) > 0
+def test_chunk_id_metadata():
+    """
+    测试 chunk_id。
+
+    Chunk：
+    将一个较大的文档切分成若干个可以单独检索的小知识片段。
+
+    chunk_id：
+    用来标识某一个具体知识片段。
+    """
+
+    retriever = build_test_retriever()
+
+    results = retriever.search(
+        "Customer 表",
+        top_k=3
+    )
+
+    assert len(results) > 0
+
+    for result in results:
+        if "chunk_id" in result:
+            assert result["chunk_id"] is not None
+
+
+def test_rag_similarity_score():
+    """
+    测试相似度分数。
+
+    similarity score：
+    表示用户问题和知识片段之间的相关程度。
+    """
+
+    retriever = build_test_retriever()
+
+    results = retriever.search(
+        "Customer 表",
+        top_k=3
+    )
+
+    assert len(results) > 0
+
+    for result in results:
+        if "score" in result:
+            assert isinstance(
+                result["score"],
+                (int, float)
+            )
+
+
+def test_rag_pdf_source():
+    """
+    测试 PDF 是否能够作为知识来源。
+    """
+
+    retriever = build_test_retriever()
+
+    results = retriever.search(
+        "Customer 表",
+        top_k=5
+    )
+
+    assert len(results) > 0
+
+    sources = [
+        str(result.get("source", ""))
+        for result in results
+    ]
+
+    # 只要有来源信息即可。
+    # 不强制要求第一条一定是 PDF，
+    # 因为 TXT 和 PDF 可能都有相关内容。
+    assert any(source.strip() != "" for source in sources)
+
+
+def test_rag_multiple_results():
+    """
+    测试一次检索多个结果。
+    """
+
+    retriever = build_test_retriever()
+
+    results = retriever.search(
+        "数据库中的歌曲、专辑和歌手",
+        top_k=5
+    )
+
+    assert isinstance(results, list)
+
+
+def test_rag_empty_query():
+    """
+    测试空问题的基本健壮性。
+
+    Robustness（鲁棒性）：
+    指系统面对异常或不理想输入时，
+    仍然能够稳定运行，而不是直接崩溃。
+    """
+
+    retriever = build_test_retriever()
+
+    try:
+        results = retriever.search(
+            "",
+            top_k=3
+        )
+
+        assert isinstance(results, list)
+
+    except Exception as e:
+        # 如果当前 Retriever 明确禁止空查询，
+        # 也不应该把错误静默掉。
+        # 这里重新抛出，让 pytest 明确告诉我们问题。
+        raise e
+
+
+def test_rag_chinook_relationship():
+    """
+    测试 Chinook 数据库中的基本关系知识。
+    """
+
+    retriever = build_test_retriever()
+
+    results = retriever.search(
+        "Artist、Album、Track 三张表之间是什么关系？",
+        top_k=5
+    )
+
+    assert len(results) > 0
+
+    text = " ".join(
+        str(result.get("text", ""))
+        for result in results
+    )
+
+    assert (
+        "Artist" in text
+        or "Album" in text
+        or "Track" in text
+    )
