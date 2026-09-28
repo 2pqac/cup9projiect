@@ -75,23 +75,25 @@ class Retriever:
 
 
 
-    def tokenize(self,text):
-
+    def tokenize(self, text):
         """
-        简单中文英文分词
+        中英文分词。
 
-        比赛初版够用
+        注意：Python 中汉字 isalnum() 也为 True，
+        若只判断 isalnum，会把“Album表和Artist表”整段连成一个词。
+        因此：
+        - ASCII 英文/数字连续成词；
+        - 汉字等非 ASCII 文字按单字切分（中文无空格，单字即可参与匹配）；
+        - 标点与空白跳过。
         """
 
         text = str(text)
-
-        words=[]
-
-        current=""
+        words = []
+        current = ""
 
         for c in text:
 
-            if c.isalnum():
+            if c.isascii() and c.isalnum():
 
                 current += c
 
@@ -99,16 +101,14 @@ class Retriever:
 
                 if current:
                     words.append(current)
-                    current=""
+                    current = ""
 
-                if c.strip():
-
+                if c.isalnum():
+                    # 汉字（非 ASCII 的“字母”）单字成词
                     words.append(c)
-
 
         if current:
             words.append(current)
-
 
         return words
 

@@ -203,9 +203,9 @@ def test_source_page_metadata():
 
     assert len(results) > 0
 
-    # 至少检查结果对象能够正常访问 page
+    # PDF 片段必须有页码；TXT/MD 无页码概念，page 允许为 None
     for result in results:
-        if "page" in result:
+        if str(result.get("source", "")).lower().endswith(".pdf"):
             assert result["page"] is not None
 
 
