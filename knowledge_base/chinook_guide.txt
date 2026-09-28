@@ -1,0 +1,212 @@
+Chinook 数据库知识说明
+
+一、数据库简介
+
+Chinook 是一个数字媒体商店示例数据库。
+数据库用于模拟数字音乐商店中的客户、发票、歌曲、专辑、歌手、音乐类型等业务数据。
+
+二、Artist 表
+
+Artist 表用于保存歌手或艺术家的基本信息。
+
+主要字段：
+
+ArtistId：
+表示歌手的唯一编号，是 Artist 表的主键。
+
+Name：
+表示歌手或艺术家的名称。
+
+三、Album 表
+
+Album 表用于保存专辑信息。
+
+主要字段：
+
+AlbumId：
+表示专辑的唯一编号，是 Album 表的主键。
+
+Title：
+表示专辑名称。
+
+ArtistId：
+表示该专辑所属歌手的编号，是指向 Artist 表的外键。
+
+Artist 表和 Album 表通过 ArtistId 建立关系：
+
+Album.ArtistId = Artist.ArtistId
+
+四、Track 表
+
+Track 表用于保存歌曲信息。
+
+主要字段：
+
+TrackId：
+表示歌曲的唯一编号，是 Track 表的主键。
+
+Name：
+表示歌曲名称。
+
+AlbumId：
+表示歌曲所属专辑。
+
+MediaTypeId：
+表示歌曲的媒体类型。
+
+GenreId：
+表示歌曲所属音乐类型。
+
+Composer：
+表示作曲家。
+
+Milliseconds：
+表示歌曲播放时长。
+
+UnitPrice：
+表示歌曲价格。
+
+五、Genre 表
+
+Genre 表用于保存音乐类型。
+
+主要字段：
+
+GenreId：
+表示音乐类型的唯一编号，是 Genre 表的主键。
+
+Name：
+表示音乐类型名称。
+
+Track 表和 Genre 表通过 GenreId 建立关系：
+
+Track.GenreId = Genre.GenreId
+
+六、Customer 表
+
+Customer 表用于保存客户信息。
+
+主要字段：
+
+CustomerId：
+表示客户的唯一编号，是 Customer 表的主键。
+
+FirstName：
+客户名字。
+
+LastName：
+客户姓氏。
+
+Country：
+客户所在国家。
+
+City：
+客户所在城市。
+
+Address：
+客户地址。
+
+Phone：
+客户电话。
+
+Email：
+客户邮箱。
+
+七、Invoice 表
+
+Invoice 表用于保存客户发票信息。
+
+主要字段：
+
+InvoiceId：
+发票唯一编号，是 Invoice 表的主键。
+
+CustomerId：
+表示发票属于哪个客户，是指向 Customer 表的外键。
+
+InvoiceDate：
+发票日期。
+
+BillingCountry：
+账单国家。
+
+Total：
+发票总金额。
+
+Customer 表和 Invoice 表通过 CustomerId 建立关系：
+
+Invoice.CustomerId = Customer.CustomerId
+
+八、InvoiceLine 表
+
+InvoiceLine 表用于保存发票中的具体商品明细。
+
+主要字段：
+
+InvoiceLineId：
+发票明细唯一编号，是 InvoiceLine 表的主键。
+
+InvoiceId：
+表示该明细属于哪张发票。
+
+TrackId：
+表示购买的是哪首歌曲。
+
+UnitPrice：
+单价。
+
+Quantity：
+数量。
+
+九、Playlist 表
+
+Playlist 表用于保存播放列表。
+
+PlaylistId：
+播放列表唯一编号，是 Playlist 表的主键。
+
+Name：
+播放列表名称。
+
+十、PlaylistTrack 表
+
+PlaylistTrack 用于建立播放列表和歌曲之间的关系。
+
+PlaylistId：
+播放列表编号。
+
+TrackId：
+歌曲编号。
+
+一个播放列表可以包含多首歌曲。
+一首歌曲也可以出现在多个播放列表中。
+
+十一、主要关系总结
+
+Artist -> Album
+
+Album -> Track
+
+Genre -> Track
+
+Customer -> Invoice
+
+Invoice -> InvoiceLine
+
+Track -> InvoiceLine
+
+Playlist <-> Track
+
+这些表通过主键和外键建立关系。
+
+十二、典型业务问题
+
+如果问题询问歌手和专辑之间的关系，可以使用 Artist 和 Album。
+
+如果问题询问歌曲属于哪种音乐类型，可以使用 Track 和 Genre。
+
+如果问题询问客户的发票，可以使用 Customer 和 Invoice。
+
+如果问题询问某张发票中的歌曲明细，可以使用 Invoice 和 InvoiceLine。
+
+如果问题询问播放列表中的歌曲，可以使用 Playlist、PlaylistTrack 和 Track。
