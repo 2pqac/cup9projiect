@@ -6,25 +6,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 class TfidfRetriever:
     """
-    基于 TF-IDF 的文本检索器。
+    TF-IDF 文本检索器。
 
-    工作流程：
+    TF-IDF：
+    用数字表示文本中的词/字符重要程度。
 
-    Chunk
-      ↓
-    TF-IDF 向量化
-      ↓
-    保存矩阵
+    Cosine Similarity：
+    计算用户问题与 Chunk 的相似程度。
 
-    用户问题
-      ↓
-    TF-IDF 向量化
-      ↓
-    与所有 Chunk 计算相似度
-      ↓
-    排序
-      ↓
-    返回 Top-K
+    返回 Top-K：
+    最相关的 K 个 Chunk。
     """
 
     def __init__(
@@ -39,24 +30,6 @@ class TfidfRetriever:
             )
 
         self.chunks = chunks
-
-        # ----------------------------------------------------
-        # analyzer="char"
-        #
-        # 中文没有天然空格分词，
-        # 所以这里采用字符级 TF-IDF。
-        #
-        # 例如：
-        #
-        # Customer 表
-        #
-        # 会拆成类似：
-        #
-        # Cu
-        # Cus
-        # Customer
-        # ...
-        # ----------------------------------------------------
 
         self.vectorizer = (
             TfidfVectorizer(
@@ -76,6 +49,10 @@ class TfidfRetriever:
                 texts
             )
         )
+
+    # ========================================================
+    # 检索
+    # ========================================================
 
     def search(
         self,
@@ -108,14 +85,14 @@ class TfidfRetriever:
             self.matrix
         )[0]
 
-        ranked_indexes = scores.argsort()[
-            ::-1
-        ]
+        ranked_indexes = (
+            scores.argsort()[::-1]
+        )
 
         results = []
 
-        for index in ranked_indexes[:
-            top_k
+        for index in ranked_indexes[
+            :top_k
         ]:
 
             chunk = dict(
@@ -133,6 +110,10 @@ class TfidfRetriever:
         return results
 
 
+# ============================================================
+# 测试
+# ============================================================
+
 if __name__ == "__main__":
 
     from document_loader import (
@@ -143,7 +124,9 @@ if __name__ == "__main__":
         build_chunks
     )
 
-    documents = load_knowledge_base()
+    documents = (
+        load_knowledge_base()
+    )
 
     chunks = build_chunks(
         documents
@@ -154,9 +137,14 @@ if __name__ == "__main__":
     )
 
     test_questions = [
+
         "Customer 表保存什么？",
+
         "Album 和 Artist 有什么关系？",
-        "Track 表保存歌曲的哪些信息？",
+
+        "Track 表保存哪些信息？",
+
+        "Invoice 和 Customer 有什么关系？",
     ]
 
     for question in test_questions:
@@ -176,6 +164,7 @@ if __name__ == "__main__":
         for result in results:
 
             print()
+
             print(
                 "Chunk ID：",
                 result["chunk_id"]
@@ -192,6 +181,19 @@ if __name__ == "__main__":
             print(
                 "来源：",
                 result["source"]
+            )
+
+            print(
+                "页码：",
+                result["page"]
+            )
+
+            print(
+                "章节：",
+                result.get(
+                    "section",
+                    "未知"
+                )
             )
 
             print(

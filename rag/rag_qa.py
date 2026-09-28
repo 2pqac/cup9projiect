@@ -11,9 +11,12 @@ from openai import OpenAI
 # 项目路径
 # ============================================================
 
-PROJECT_ROOT = Path(
-    __file__
-).resolve().parent.parent
+PROJECT_ROOT = (
+    Path(__file__)
+    .resolve()
+    .parent
+    .parent
+)
 
 if str(PROJECT_ROOT) not in sys.path:
 
@@ -24,7 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 # ============================================================
-# 导入自己的 RAG 模块
+# 导入 RAG 模块
 # ============================================================
 
 from rag.document_loader import (
@@ -48,7 +51,6 @@ load_dotenv(
     PROJECT_ROOT / ".env"
 )
 
-
 LLM_API_KEY = os.getenv(
     "LLM_API_KEY",
     ""
@@ -66,17 +68,7 @@ LLM_MODEL = os.getenv(
 
 
 # ============================================================
-# LLM Client
-# ============================================================
-
-client = OpenAI(
-    api_key=LLM_API_KEY,
-    base_url=LLM_BASE_URL
-)
-
-
-# ============================================================
-# RAG System
+# RAG 系统
 # ============================================================
 
 class RAGSystem:
@@ -87,10 +79,6 @@ class RAGSystem:
     ):
 
         self.top_k = top_k
-
-        # ----------------------------------------------------
-        # 1. 加载文档
-        # ----------------------------------------------------
 
         print(
             "[RAG] 正在读取知识库..."
@@ -106,7 +94,7 @@ class RAGSystem:
         )
 
         # ----------------------------------------------------
-        # 2. 文档切片
+        # Document -> Chunk
         # ----------------------------------------------------
 
         self.chunks = build_chunks(
@@ -121,7 +109,7 @@ class RAGSystem:
         )
 
         # ----------------------------------------------------
-        # 3. 构建检索器
+        # Chunk -> TF-IDF
         # ----------------------------------------------------
 
         self.retriever = (
@@ -151,7 +139,7 @@ class RAGSystem:
 
 
     # ========================================================
-    # 组装 Context
+    # 构建上下文
     # ========================================================
 
     def build_context(
@@ -174,6 +162,11 @@ class RAGSystem:
                 "page"
             ]
 
+            section = result.get(
+                "section",
+                "未知章节"
+            )
+
             if page is None:
 
                 location = source
@@ -188,6 +181,9 @@ class RAGSystem:
             block = (
                 f"[资料 {index}]\n"
                 f"来源：{location}\n"
+                f"章节：{section}\n"
+                f"Chunk ID："
+                f"{result['chunk_id']}\n"
                 f"内容：\n"
                 f"{result['text']}"
             )
@@ -202,7 +198,7 @@ class RAGSystem:
 
 
     # ========================================================
-    # 调用 LLM
+    # LLM
     # ========================================================
 
     def generate_answer(
@@ -211,43 +207,50 @@ class RAGSystem:
         context: str
     ) -> str:
 
-        system_prompt = """
-你是一个企业知识库问答助手。
+        if not LLM_API_KEY:
 
-你的任务是：
+            raise RuntimeError(
+                "没有配置 LLM_API_KEY"
+            )
+
+        system_prompt = """
+你是企业知识库问答助手。
+
+你的任务：
 根据提供的知识库资料回答用户问题。
 
 必须遵守：
 
 1. 只能根据提供的资料回答。
-2. 不要凭空编造知识库中不存在的信息。
-3. 如果资料无法回答，请明确说“知识库中没有足够的信息”。
-4. 回答尽量准确、简洁。
-5. 在回答中使用 [资料1]、[资料2] 这样的引用标记。
+2. 不得凭空编造知识库中不存在的信息。
+3. 如果资料不足，请明确回答：
+   “知识库中没有足够的信息”。
+4. 回答中使用 [资料1]、[资料2] 等引用。
+5. 不要把相似但不相关的内容当成事实。
+6. 回答要清晰、准确、简洁。
 """
 
         user_prompt = f"""
-知识库资料：
+【知识库资料】
 
 {context}
 
-用户问题：
+【用户问题】
 
 {question}
 
-请根据以上资料回答问题。
+请根据知识库资料回答。
 """
 
-        if not LLM_API_KEY:
-
-            raise RuntimeError(
-                "没有配置 LLM_API_KEY。"
-                "请检查项目根目录 .env"
-            )
+        client = OpenAI(
+            api_key=LLM_API_KEY,
+            base_url=LLM_BASE_URL
+        )
 
         response = (
             client.chat.completions.create(
                 model=LLM_MODEL,
+
                 messages=[
                     {
                         "role": "system",
@@ -258,21 +261,29 @@ class RAGSystem:
                         "content": user_prompt
                     }
                 ],
+
                 temperature=0
             )
         )
 
-        return (
+        content = (
             response
             .choices[0]
             .message
             .content
-            .strip()
         )
+
+        if not content:
+
+            raise RuntimeError(
+                "LLM 没有返回答案"
+            )
+
+        return content.strip()
 
 
     # ========================================================
-    # 完整问答链
+    # 完整 RAG
     # ========================================================
 
     def ask(
@@ -281,8 +292,7 @@ class RAGSystem:
     ) -> Dict[str, Any]:
 
         # ----------------------------------------------------
-        # Step 1
-        # 检索
+        # 1. 检索
         # ----------------------------------------------------
 
         results = self.retrieve(
@@ -290,8 +300,7 @@ class RAGSystem:
         )
 
         # ----------------------------------------------------
-        # Step 2
-        # Context
+        # 2. Context
         # ----------------------------------------------------
 
         context = self.build_context(
@@ -299,8 +308,7 @@ class RAGSystem:
         )
 
         # ----------------------------------------------------
-        # Step 3
-        # LLM
+        # 3. LLM
         # ----------------------------------------------------
 
         answer = self.generate_answer(
@@ -309,56 +317,79 @@ class RAGSystem:
         )
 
         # ----------------------------------------------------
-        # Step 4
-        # trace
+        # 4. Trace
         # ----------------------------------------------------
 
         trace = [
+
             {
                 "step": "document_loading",
+
                 "document_count": len(
                     self.documents
                 )
             },
+
             {
                 "step": "chunking",
+
                 "chunk_count": len(
                     self.chunks
                 )
             },
+
             {
                 "step": "retrieval",
+
                 "top_k": self.top_k,
+
                 "retrieved_chunks": [
+
                     {
                         "chunk_id": r[
                             "chunk_id"
                         ],
+
                         "source": r[
                             "source"
                         ],
+
                         "page": r[
                             "page"
                         ],
+
+                        "section": r.get(
+                            "section",
+                            "未知"
+                        ),
+
                         "score": round(
                             r["score"],
                             4
                         )
                     }
+
                     for r in results
                 ]
             },
+
             {
                 "step": "generation",
+
                 "model": LLM_MODEL
             }
         ]
 
         return {
+
             "success": True,
+
             "question": question,
+
             "answer": answer,
+
             "sources": results,
+
             "trace": trace
         }
 
@@ -374,9 +405,13 @@ if __name__ == "__main__":
     )
 
     questions = [
+
         "Customer 表保存什么？",
+
         "Album 和 Artist 有什么关系？",
+
         "Track 表主要保存哪些信息？",
+
         "Invoice 和 Customer 有什么关系？"
     ]
 
@@ -419,14 +454,38 @@ if __name__ == "__main__":
             ]:
 
                 print(
-                    f"- "
-                    f"{source['source']}"
-                    f" "
-                    f"第 {source['page'] or '-'} 页"
-                    f" "
-                    f"(score="
-                    f"{source['score']:.4f}"
-                    f")"
+                    "--------------------------------"
+                )
+
+                print(
+                    "文件：",
+                    source["source"]
+                )
+
+                print(
+                    "页码：",
+                    source["page"]
+                )
+
+                print(
+                    "章节：",
+                    source.get(
+                        "section",
+                        "未知"
+                    )
+                )
+
+                print(
+                    "Chunk ID：",
+                    source["chunk_id"]
+                )
+
+                print(
+                    "相似度：",
+                    round(
+                        source["score"],
+                        4
+                    )
                 )
 
         except Exception as e:
