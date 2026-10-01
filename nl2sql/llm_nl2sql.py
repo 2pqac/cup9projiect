@@ -36,11 +36,23 @@ from nl2sql.join_graph import (
     connect_tables,
     detect_metric_tables,
 )
+import sqlglot
+from sqlglot import exp
 
 
 SCHEMA_JSON = PROJECT_ROOT / "database" / "schema.json"
 
 load_dotenv(PROJECT_ROOT / ".env")
+
+
+def actual_tables_in_sql(sql):
+    """从 SQL AST 提取真实引用的表名（含 JOIN / 子查询）。"""
+    tree = sqlglot.parse_one(sql, read="sqlite")
+    names = []
+    for table in tree.find_all(exp.Table):
+        if table.name and table.name not in names:
+            names.append(table.name)
+    return names
 
 
 # ============================================================
@@ -190,7 +202,9 @@ class NL2SQL:
             return {"success": False, "message": join_ok["message"], "error": join_ok["message"], "trace": trace}
 
         result = execute_sql(sql)
+        actual_tables = actual_tables_in_sql(sql)
         trace.append({"step": via, "detail": f"{len(result['rows'])} 行结果"})
+        trace.append({"step": "实际使用数据表", "detail": "、".join(actual_tables)})
 
         answer = build_answer(question, result["columns"], result["rows"])
         explanation = build_query_logic(sql)["summary"]
@@ -203,6 +217,8 @@ class NL2SQL:
             "rows": result["rows"],
             "data": result["rows"],
             "tables": tables or [],
+            "recalled_tables": tables or [],
+            "actual_tables": actual_tables,
             "attempts": attempts,
             "answer": answer,
             "explanation": explanation,

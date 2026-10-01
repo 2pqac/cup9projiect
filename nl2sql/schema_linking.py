@@ -776,7 +776,25 @@ def detect_intent(question):
 # 12. 主 Schema Linking
 # ============================================================
 
+QUESTION_FIXES = {
+    "唱歌的人": "歌手",
+    "歌者": "歌手",
+    "演唱者": "歌手",
+    "哥手": "歌手",
+    "格手": "歌手",
+    "个手": "歌手",
+}
+
+
+def normalize_question(question):
+    """口语 / 错别字 -> 规范词，提升 Schema Linking 鲁棒性。"""
+    for wrong, right in QUESTION_FIXES.items():
+        question = question.replace(wrong, right)
+    return question
+
+
 def schema_link(question):
+    question = normalize_question(question)
 
     # 读取数据库结构
     schema_info = load_database_schema()

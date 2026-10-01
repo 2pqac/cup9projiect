@@ -65,7 +65,8 @@ class Cup8Agent:
         for row in rows:
             print(" | ".join(str(v) for v in row))
 
-        print("\n数据来源表：", "、".join(result.get("tables", [])))
+        actual = result.get("actual_tables") or result.get("tables", [])
+        print("\n数据来源表：", "、".join(actual))
 
         self.show_trace(result.get("trace", []))
 
