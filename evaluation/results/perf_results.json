@@ -1,0 +1,99 @@
+{
+  "fixed_stage": [
+    {
+      "label": "轻查询-会员计数",
+      "q": "一共有多少会员？",
+      "sql": "SELECT COUNT(*) FROM t_a;",
+      "llm_ms": 518.7,
+      "schema_bfs_ms": 0.0
+    },
+    {
+      "label": "JOIN聚合-订单金额",
+      "q": "订单金额最高的前3个会员是谁？",
+      "sql": "SELECT t_a.f_name, SUM(t_b.f_amount) AS total_amount FROM t_a JOIN t_b ON t_a.id = t_b.f_member_id GROUP BY t_a.id, t_a.f_name ORDER BY total_amount DESC LIMIT 3;",
+      "llm_ms": 611.0,
+      "schema_bfs_ms": 0.001
+    },
+    {
+      "label": "重查询-明细销量",
+      "q": "销量最高的商品是哪个？",
+      "sql": "SELECT t_d.f_title, SUM(t_c.f_qty) FROM t_c JOIN t_d ON t_c.f_product_id = t_d.id GROUP BY t_d.id ORDER BY SUM(t_c.f_qty) DESC LIMIT 1;",
+      "llm_ms": 552.2,
+      "schema_bfs_ms": 0.001
+    }
+  ],
+  "by_scale": [
+    {
+      "scale": 1,
+      "size_kb": 64.0,
+      "rows": {
+        "t_a": 60,
+        "t_b": 400,
+        "t_c": 1019,
+        "t_d": 200
+      },
+      "queries": [
+        {
+          "label": "轻查询-会员计数",
+          "exec_ms": 0.25
+        },
+        {
+          "label": "JOIN聚合-订单金额",
+          "exec_ms": 0.45
+        },
+        {
+          "label": "重查询-明细销量",
+          "exec_ms": 0.56
+        }
+      ]
+    },
+    {
+      "scale": 10,
+      "size_kb": 380.0,
+      "rows": {
+        "t_a": 600,
+        "t_b": 4000,
+        "t_c": 10021,
+        "t_d": 2000
+      },
+      "queries": [
+        {
+          "label": "轻查询-会员计数",
+          "exec_ms": 0.29
+        },
+        {
+          "label": "JOIN聚合-订单金额",
+          "exec_ms": 1.59
+        },
+        {
+          "label": "重查询-明细销量",
+          "exec_ms": 3.71
+        }
+      ]
+    },
+    {
+      "scale": 40,
+      "size_kb": 1440.0,
+      "rows": {
+        "t_a": 2400,
+        "t_b": 16000,
+        "t_c": 40066,
+        "t_d": 8000
+      },
+      "queries": [
+        {
+          "label": "轻查询-会员计数",
+          "exec_ms": 0.26
+        },
+        {
+          "label": "JOIN聚合-订单金额",
+          "exec_ms": 6.74
+        },
+        {
+          "label": "重查询-明细销量",
+          "exec_ms": 16.59
+        }
+      ]
+    }
+  ]
+}

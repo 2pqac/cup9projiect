@@ -10,8 +10,8 @@
 ## 一、系统功能
 
 - **NL2SQL（结构化数据）**：中文问题 → 外键图 BFS 定位相关表 → LLM 生成 SQL
-  → 安全校验 + 表字段校验 → 执行；失败把报错回喂模型自我修正（最多 3 次），
-  LLM 不可用时规则字典兜底。
+  → 安全校验 + 表字段校验 + JOIN 语义校验 → 执行；失败把报错回喂模型自我修正
+  （最多 3 次），LLM 不可用时规则字典兜底。
 - **RAG（非结构化数据）**：PDF / TXT 加载 → 结构化切片 → TF-IDF 检索
   → LLM 严格基于片段生成答案，并给出文档名、章节、页码来源。
 - **Agent（编排）**：意图路由（SQL / RAG），统一展示答案、来源与推理链。
@@ -28,6 +28,7 @@ cup8project/
 ├─ nl2sql/
 │  ├─ llm_nl2sql.py      # NL2SQL 主流程（LLM 生成 + 自我修正 + 规则兜底）
 │  ├─ join_graph.py      # 外键关系图 + BFS 自动补全 JOIN 路径
+│  ├─ join_validator.py  # JOIN 语义校验（拦截笛卡尔积 / 错误关联键）
 │  ├─ schema_linking.py  # 规则 Schema Linking（实体锚点 / 字段 / 值）
 │  ├─ validator.py       # SQL 安全校验（拦截 DROP/DELETE/UPDATE 等写操作）
 │  ├─ schema_validator.py# 表 / 字段真实存在校验
@@ -48,11 +49,13 @@ cup8project/
 ├─ knowledge_base/       # RAG 知识库文档
 │  ├─ chinook_guide.pdf
 │  └─ chinook_guide.txt
-├─ tests/                # pytest 测试
-├─ evaluation/           # NL2SQL 评估脚本与结果
+├─ tests/                # pytest（NL2SQL / JOIN 图 / JOIN 校验 / 合成泛化 / RAG / PDF / Agent）
+├─ evaluation/           # 评估、泛化与性能实验
 │  ├─ nl2sql_eval.py     # 基线 vs 优化，输出 5 项指标
 │  ├─ analyze_oos.py     # 离线分析“超纲 / 脑补表”
-│  └─ results/           # 评估结果 JSON
+│  ├─ perf_eval.py       # 多规模性能测试（分阶段计时 + 空间）
+│  ├─ synth/             # 合成业务库（泛化实验，见第六节）
+│  └─ results/           # 评估与性能结果 JSON
 ├─ .env.example          # 环境变量模板
 ├─ requirements.txt
 └─ README.md
@@ -65,8 +68,8 @@ cup8project/
 > 环境：Windows + PowerShell（macOS / Linux 命令等价）；Python 3.10+（本项目使用 3.13）。
 
 ```powershell
-# 1. 进入项目目录
-cd D:\cup8project
+# 1. 进入项目目录（替换为你实际克隆 / 解压的路径）
+cd <项目目录>
 
 # 2. 创建并激活虚拟环境
 python -m venv .venv
@@ -112,7 +115,7 @@ python nl2sql/llm_nl2sql.py
 pytest tests/ -q
 ```
 
-- **已配置 `LLM_API_KEY`**：离线测试 + LLM 端到端测试全部运行；
+- **已配置 `LLM_API_KEY`（本机实测 86 passed）**：离线 + LLM 端到端全部运行；
 - **未配置 key**：离线测试通过，LLM 端到端用例自动 `skip`（属正常现象，
   对外结论需注明“LLM 集成测试在无 key 交付版处于跳过状态”）。
 
@@ -146,6 +149,49 @@ python evaluation/analyze_oos.py
 即把“依赖模型记忆、不可控、不可复现”的召回，变为“基于外键图、确定、
 可复现、可扩展到任意库”的召回；迁移到模型未见过的真实业务库时，
 基线将因无法记忆而失败，优化方案仍可正常工作。
+
+### 6.1 JOIN 语义校验（高质量多表关联）
+
+`nl2sql/join_validator.py` 对每条 SELECT，以直接表为节点、ON / WHERE 中经
+真实外键验证的等值条件为边，要求多表经外键连通，统一拦截：
+
+- 逗号写法的笛卡尔积（`FROM Customer, Invoice`）；
+- 字段存在但并非外键的错误关联（`...JOIN Invoice ON Customer.City = Invoice.InvoiceDate`）。
+
+校验失败会把原因回喂 LLM 修正；离线测试见 `tests/test_join_validator.py`（13 项）。
+
+### 6.2 泛化实验（证明不依赖模型记住 Chinook）
+
+`evaluation/synth/` 生成表名 / 字段名完全陌生（t_a..t_f / f_xxx）、外键拓扑为
+电商订单的合成库，并配中文别名语义层：
+
+- 离线：在合成外键图上验证 BFS 最短路径与中间表补全（`tests/test_synth_generalization.py`，8 项）；
+- 端到端：中文问题经别名锚点 → BFS → LLM 生成 → 校验执行，4 个代表性问题全部
+  一次成功（`evaluation/synth/generalization_results.json`），证明系统在模型未见过的
+  库上照常工作。
+
+### 6.3 多规模性能测试
+
+`evaluation/perf_eval.py` 在 scale = 1 / 10 / 40 三种规模上分阶段计时
+（`evaluation/results/perf_results.json`）：
+
+| 阶段 / 查询 | scale 1 | scale 10 | scale 40 |
+| --- | --- | --- | --- |
+| LLM 生成（与规模无关） | 0.52–0.61 s | 同左 | 同左 |
+| Schema Linking + BFS | 0.001 ms | 0.001 ms | 0.001 ms |
+| 执行：会员计数 | 0.25 ms | 0.29 ms | 0.26 ms |
+| 执行：订单金额 JOIN 聚合 | 0.45 ms | 1.59 ms | 6.74 ms |
+| 执行：明细销量（重） | 0.56 ms | 3.71 ms | 16.59 ms |
+| 库文件大小 | 64 KB | 380 KB | 1440 KB |
+
+复杂度与瓶颈：
+
+- BFS：O(V+E)（表 / 外键数量级，近常数）；规则 Schema Linking 近常数；
+- LLM：取决于 schema token，主要是网络往返，与数据行数无关；
+- SQL 执行：聚合 / JOIN 随扫描大表行数近似 O(N)，主键计数近常数；空间 O(N)。
+- **瓶颈为 LLM 网络往返（约 0.5–0.6 s，占端到端 95% 以上）**，SQL 执行即使
+  40 倍数据也仅约 16 ms。优化方向：prompt 缓存、连接复用、裁剪无关表、流式返回、
+  外键 / 过滤列建索引、高频结果缓存。
 
 ---
 

@@ -18,16 +18,18 @@ SCHEMA_PATH = PROJECT_ROOT / "database" / "schema.json"
 # 读取 Schema
 # ============================================================
 
-def load_schema():
-    """读取 schema.json"""
+def load_schema(path=None):
+    """读取 schema.json；可传入自定义路径。"""
 
-    if not SCHEMA_PATH.exists():
+    target = path or SCHEMA_PATH
+
+    if not target.exists():
         raise FileNotFoundError(
-            f"找不到 Schema 文件：{SCHEMA_PATH}"
+            f"找不到 Schema 文件：{target}"
         )
 
     with open(
-        SCHEMA_PATH,
+        target,
         "r",
         encoding="utf-8"
     ) as f:
@@ -67,12 +69,12 @@ def get_table_columns(table_info):
 # 检查 SQL 中使用的表
 # ============================================================
 
-def validate_tables(sql: str):
+def validate_tables(sql: str, schema=None):
     """
-    检查 SQL 使用的表是否存在。
+    检查 SQL 使用的表是否存在。可传入自定义 schema。
     """
 
-    schema = load_schema()
+    schema = schema or load_schema()
 
     schema_tables = get_schema_tables(schema)
 
@@ -145,7 +147,7 @@ def validate_tables(sql: str):
 # 检查 SQL 中使用的字段
 # ============================================================
 
-def validate_columns(sql: str):
+def validate_columns(sql: str, schema=None):
     """
     检查 SQL 中使用的字段是否存在。
 
@@ -159,7 +161,7 @@ def validate_columns(sql: str):
     7. SELECT 别名在 ORDER BY 中的引用
     """
 
-    table_result = validate_tables(sql)
+    table_result = validate_tables(sql, schema=schema)
 
     if not table_result["valid"]:
         return table_result

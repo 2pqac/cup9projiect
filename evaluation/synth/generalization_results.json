@@ -1,0 +1,61 @@
+[
+  {
+    "q": "订单金额最高的前3个会员是谁？",
+    "success": true,
+    "sql": "SELECT t_a.f_name, SUM(t_b.f_amount) AS total_amount FROM t_a JOIN t_b ON t_a.id = t_b.f_member_id GROUP BY t_a.id, t_a.f_name ORDER BY total_amount DESC LIMIT 3;",
+    "rows": [
+      [
+        "赵秀",
+        29899.35
+      ],
+      [
+        "徐兰",
+        27117.81
+      ],
+      [
+        "徐军娜",
+        25217.8
+      ]
+    ],
+    "attempts": 1,
+    "error": ""
+  },
+  {
+    "q": "销量最高的商品是哪个？",
+    "success": true,
+    "sql": "SELECT t_d.f_title, SUM(t_c.f_qty) FROM t_c JOIN t_d ON t_c.f_product_id = t_d.id GROUP BY t_d.id ORDER BY SUM(t_c.f_qty) DESC LIMIT 1;",
+    "rows": [
+      [
+        "服装礼盒24",
+        40
+      ]
+    ],
+    "attempts": 1,
+    "error": ""
+  },
+  {
+    "q": "一共有多少会员？",
+    "success": true,
+    "sql": "SELECT COUNT(*) FROM t_a;",
+    "rows": [
+      [
+        60
+      ]
+    ],
+    "attempts": 1,
+    "error": ""
+  },
+  {
+    "q": "哪个类别的商品最多？",
+    "success": true,
+    "sql": "SELECT t_e.f_label, COUNT(t_d.id) FROM t_e JOIN t_d ON t_e.id = t_d.f_category_id GROUP BY t_e.id ORDER BY COUNT(t_d.id) DESC LIMIT 1;",
+    "rows": [
+      [
+        "数码配件",
+        27
+      ]
+    ],
+    "attempts": 1,
+    "error": ""
+  }
+]

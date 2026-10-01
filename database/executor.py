@@ -6,11 +6,12 @@ from pathlib import Path
 DB_PATH = Path(__file__).parent / "chinook.db"
 
 
-def execute_sql(sql: str):
+def execute_sql(sql: str, db_path=None):
     """
     执行一条 SQL，并返回查询结果。
 
     当前版本只适合执行 SELECT 查询。
+    db_path 可注入其它 SQLite 库（默认 Chinook）。
     """
 
     sql = sql.strip()
@@ -23,7 +24,7 @@ def execute_sql(sql: str):
         raise ValueError("当前执行器只允许 SELECT 查询")
 
     # 连接 SQLite 数据库
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path or DB_PATH)
 
     try:
         cursor = conn.cursor()

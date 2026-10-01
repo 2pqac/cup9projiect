@@ -1,0 +1,197 @@
+{
+  "database": "synth_scale1",
+  "tables": {
+    "t_a": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "f_name",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "f_region_id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "f_region_id",
+          "to_table": "t_f",
+          "to_column": "id"
+        }
+      ]
+    },
+    "t_b": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "f_member_id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "f_amount",
+          "type": "REAL",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "f_date",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "f_member_id",
+          "to_table": "t_a",
+          "to_column": "id"
+        }
+      ]
+    },
+    "t_c": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "f_order_id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "f_product_id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "f_qty",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "f_product_id",
+          "to_table": "t_d",
+          "to_column": "id"
+        },
+        {
+          "from_column": "f_order_id",
+          "to_table": "t_b",
+          "to_column": "id"
+        }
+      ]
+    },
+    "t_d": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "f_title",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "f_price",
+          "type": "REAL",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "f_category_id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_column": "f_category_id",
+          "to_table": "t_e",
+          "to_column": "id"
+        }
+      ]
+    },
+    "t_e": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "f_label",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    "t_f": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "f_area",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "foreign_keys": []
+    }
+  }
+}

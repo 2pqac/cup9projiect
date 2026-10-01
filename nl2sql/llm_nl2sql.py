@@ -28,6 +28,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from database.executor import execute_sql
 from nl2sql.validator import validate_sql
 from nl2sql.schema_validator import validate_columns
+from nl2sql.join_validator import validate_join_path
 from nl2sql.schema_linking import schema_link
 from nl2sql.join_graph import (
     build_graph,
@@ -183,6 +184,10 @@ class NL2SQL:
         if not schema_ok["valid"]:
             return {"success": False, "message": schema_ok["message"], "error": schema_ok["message"], "trace": trace}
 
+        join_ok = validate_join_path(sql)
+        if not join_ok["valid"]:
+            return {"success": False, "message": join_ok["message"], "error": join_ok["message"], "trace": trace}
+
         result = execute_sql(sql)
         trace.append({"step": via, "detail": f"{len(result['rows'])} 行结果"})
         return {
@@ -261,6 +266,15 @@ class NL2SQL:
                     schema_ok = validate_columns(sql)
                     if not schema_ok["valid"]:
                         feedback = schema_ok["message"]
+                        continue
+
+                    join_ok = validate_join_path(sql)
+                    if not join_ok["valid"]:
+                        feedback = join_ok["message"]
+                        trace.append({
+                            "step": "JOIN 校验未通过，回喂修正",
+                            "detail": join_ok["message"],
+                        })
                         continue
 
                     return self._execute_and_pack(
