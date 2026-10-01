@@ -44,7 +44,8 @@ def test_logic_group_order_limit():
 
 def test_answer_count_phrase():
     answer = build_answer("美国有多少客户？", ["COUNT(*)"], [(13,)])
-    assert "13" in answer and "美国" in answer and "客户" in answer
+    assert "13" in answer and "位" in answer
+    assert "美国" in answer and "客户" in answer
 
 
 def test_answer_generic_single():
@@ -55,7 +56,7 @@ def test_answer_generic_single():
 def test_answer_top1_row():
     answer = build_answer(
         "哪个国家客户最多？", ["Country", "CustomerCount"], [("USA", 13)])
-    assert "USA" in answer and "13" in answer
+    assert "美国" in answer and "客户数" in answer and "13" in answer
 
 
 def test_answer_multiple_rows():

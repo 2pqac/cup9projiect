@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-10-01T23:05:27",
+  "captured_at": "2026-10-01T23:21:31",
   "client_created": true,
   "provider_host": "api.deepseek.com",
   "model": "deepseek-chat",
@@ -7,7 +7,7 @@
   "records": [
     {
       "question": "哪个国家客户最多？",
-      "response_id": "ace6c1fc-c35d-4bda-8623-bf706d0709b6",
+      "response_id": "201fdca2-69fb-41b8-a123-6cf92b6f10fa",
       "usage_tokens": {
         "completion_tokens": 17,
         "prompt_tokens": 224,
@@ -27,7 +27,7 @@
         "Customer"
       ],
       "generated_sql": "SELECT Country FROM Customer GROUP BY Country ORDER BY COUNT(*) DESC LIMIT 1;",
-      "latency_ms": 816.6,
+      "latency_ms": 839.2,
       "validation": {
         "safe": true,
         "columns": true,
@@ -46,7 +46,7 @@
     },
     {
       "question": "美国有多少客户？",
-      "response_id": "5dc8931a-8b70-4ddf-80a1-73736a41253a",
+      "response_id": "6ad631b9-4a79-4b19-8716-013210228310",
       "usage_tokens": {
         "completion_tokens": 11,
         "prompt_tokens": 223,
@@ -66,7 +66,7 @@
         "Customer"
       ],
       "generated_sql": "SELECT COUNT(*) FROM Customer WHERE Country = 'USA';",
-      "latency_ms": 396.7,
+      "latency_ms": 916.8,
       "validation": {
         "safe": true,
         "columns": true,
@@ -85,7 +85,7 @@
     },
     {
       "question": "消费总额最高的前3个客户是谁？",
-      "response_id": "e6989e52-4aea-4f49-8bfc-60b1c0e4344a",
+      "response_id": "c1d6af02-1dd6-4424-ade2-5d1f933fc56d",
       "usage_tokens": {
         "completion_tokens": 59,
         "prompt_tokens": 321,
@@ -106,7 +106,7 @@
         "Invoice"
       ],
       "generated_sql": "SELECT c.FirstName, c.LastName, SUM(i.Total) AS TotalSpent FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId GROUP BY c.CustomerId, c.FirstName, c.LastName ORDER BY TotalSpent DESC LIMIT 3;",
-      "latency_ms": 857.1,
+      "latency_ms": 692.1,
       "validation": {
         "safe": true,
         "columns": true,
@@ -132,6 +132,50 @@
           "Luis",
           "Rojas",
           46.62
+        ]
+      ],
+      "rule_fallback_sql": null,
+      "engine": "llm"
+    },
+    {
+      "question": "消费总额最高的客户的姓名和邮箱是什么？",
+      "response_id": "9264ce7c-4b0f-4238-8a0b-72af33040b48",
+      "usage_tokens": {
+        "completion_tokens": 46,
+        "prompt_tokens": 321,
+        "total_tokens": 367,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 128,
+          "image_tokens": null,
+          "text_tokens": null
+        },
+        "prompt_cache_hit_tokens": 128,
+        "prompt_cache_miss_tokens": 193
+      },
+      "tables_provided": [
+        "Customer",
+        "Invoice"
+      ],
+      "generated_sql": "SELECT c.FirstName, c.LastName, c.Email FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId GROUP BY c.CustomerId ORDER BY SUM(i.Total) DESC LIMIT 1;",
+      "latency_ms": 646.3,
+      "validation": {
+        "safe": true,
+        "columns": true,
+        "join_path": true
+      },
+      "result_columns": [
+        "FirstName",
+        "LastName",
+        "Email"
+      ],
+      "result_rows": [
+        [
+          "Helena",
+          "Holý",
+          "hholy@gmail.com"
         ]
       ],
       "rule_fallback_sql": null,

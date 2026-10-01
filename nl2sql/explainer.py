@@ -19,6 +19,23 @@ TABLE_CN = {
     "PlaylistTrack": "播放列表关联", "Employee": "员工",
 }
 
+# 常用字段中文映射
+COLUMN_CN = {
+    "Country": "国家", "FirstName": "名", "LastName": "姓",
+    "Email": "邮箱", "Total": "金额", "TotalSpent": "消费总额",
+    "Quantity": "数量", "Name": "名称", "Title": "标题",
+    "City": "城市", "Phone": "电话",
+}
+
+# 名词对应的常用量词
+MEASURE_WORD = {
+    "客户": "位", "发票": "张", "歌曲": "首", "专辑": "张",
+    "歌手": "位", "员工": "位", "订单": "笔",
+}
+
+# 少量常见枚举值的中文展示
+VALUE_CN = {"USA": "美国"}
+
 
 def _direct_tables(tree):
     tables = []
@@ -94,6 +111,26 @@ def build_query_logic(sql):
     }
 
 
+def _cn_column(name, question):
+    if name in COLUMN_CN:
+        return COLUMN_CN[name]
+    upper = name.upper()
+    if "COUNT" in upper:
+        for noun in MEASURE_WORD:
+            if noun in (question or ""):
+                return noun + "数"
+        return "数量"
+    if "SUM" in upper or "TOTAL" in upper:
+        return "金额"
+    return name
+
+
+def _cn_value(value):
+    if isinstance(value, str) and value in VALUE_CN:
+        return VALUE_CN[value]
+    return value
+
+
 def build_answer(question, columns, rows):
     """根据问题与结果，确定性地生成一句中文答案。"""
     q = (question or "").strip().rstrip("？?")
@@ -101,20 +138,23 @@ def build_answer(question, columns, rows):
     if not rows:
         return "未查询到符合条件的结果。"
 
-    # 单标量结果：尽量把“X有多少Y”改写为“X共有 N Y”
+    # 单标量结果：把“X有多少Y”改写为“X共有 N 量词Y”
     if len(rows) == 1 and len(rows[0]) == 1:
-        value = rows[0][0]
+        value = _cn_value(rows[0][0])
         match = re.search(r"(.+?)有多少(.+)", q)
         if match:
-            return f"{match.group(1)}共有 {value} {match.group(2)}。"
+            noun = match.group(2)
+            measure = MEASURE_WORD.get(noun, "")
+            return f"{match.group(1)}共有 {value} {measure}{noun}。"
         return f"{q}：{value}。"
 
     # 一行或多行：第一列视为名称，其余列作为统计值
     parts = []
     for row in rows[:10]:
-        name = row[0]
+        name = _cn_value(row[0])
         stats = "，".join(
-            f"{columns[i]}：{row[i]}" for i in range(1, len(row))
+            f"{_cn_column(columns[i], q)}：{_cn_value(row[i])}"
+            for i in range(1, len(row))
         )
         parts.append(f"{name}（{stats}）" if stats else str(name))
     more = "……" if len(rows) > 10 else ""
