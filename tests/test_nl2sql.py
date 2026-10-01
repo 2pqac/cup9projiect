@@ -50,9 +50,20 @@ def test_executor_aggregation():
     assert r["rows"][0] == ("USA", 13)
 
 
-def test_validator_blocks_write():
-    assert validate_sql("DROP TABLE Customer;")["valid"] is False
-    assert validate_sql("DELETE FROM Customer;")["valid"] is False
+FORBIDDEN_SQL = [
+    "DROP TABLE Customer;",
+    "DELETE FROM Customer;",
+    "UPDATE Customer SET Country='USA';",
+    "INSERT INTO Customer(CustomerId) VALUES (999);",
+    "ALTER TABLE Customer ADD COLUMN Hack TEXT;",
+    "CREATE TABLE Hack (x INT);",
+]
+
+
+@pytest.mark.parametrize("sql", FORBIDDEN_SQL)
+def test_validator_blocks_dangerous(sql):
+    """阶段4：写操作 / DDL（DROP/DELETE/UPDATE/INSERT/ALTER/CREATE）必须全部拦截。"""
+    assert validate_sql(sql)["valid"] is False
 
 
 def test_validator_allows_select():
@@ -113,6 +124,17 @@ CASES = [
 
     ("姓Smith的客户有多少？",
      "SELECT COUNT(*) FROM Customer WHERE LastName='Smith'"),
+
+    # 阶段1：同义词 / 不同说法必须得到同一结果
+    ("美国有多少用户？",
+     "SELECT COUNT(*) FROM Customer WHERE Country='USA'"),
+    ("美国有多少顾客？",
+     "SELECT COUNT(*) FROM Customer WHERE Country='USA'"),
+
+    # 阶段2：分组 + 排序找最多，Schema Linking 需定位 Country 字段
+    ("哪个国家的客户最多？",
+     "SELECT Country, COUNT(*) AS c FROM Customer "
+     "GROUP BY Country ORDER BY c DESC LIMIT 1"),
 ]
 
 
@@ -137,3 +159,18 @@ def test_nl2sql_end_to_end(question, verify_sql):
 
     assert result["success"], result.get("message")
     assert normalize(result["rows"]) == normalize(expected["rows"])
+
+
+def test_schema_linking_picks_country():
+    """阶段2：倒装问法也要定位到 Customer 表与 Country 字段，并返回 USA。"""
+    if not has_api_key():
+        pytest.skip("尚未配置 LLM_API_KEY（在 .env 填入后自动运行）")
+
+    r = nl2sql("客户最多的国家是哪个？")
+    assert r["success"], r.get("message")
+
+    sql = r["sql"].lower()
+    assert "customer" in sql
+    assert "country" in sql
+
+    assert normalize(r["rows"]) == normalize([("USA", 13)])
