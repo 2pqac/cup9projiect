@@ -1,0 +1,141 @@
+{
+  "captured_at": "2026-10-01T23:05:27",
+  "client_created": true,
+  "provider_host": "api.deepseek.com",
+  "model": "deepseek-chat",
+  "note": "未记录 API Key / Authorization；.env 不入库。",
+  "records": [
+    {
+      "question": "哪个国家客户最多？",
+      "response_id": "ace6c1fc-c35d-4bda-8623-bf706d0709b6",
+      "usage_tokens": {
+        "completion_tokens": 17,
+        "prompt_tokens": 224,
+        "total_tokens": 241,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 0,
+          "image_tokens": null,
+          "text_tokens": null
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 224
+      },
+      "tables_provided": [
+        "Customer"
+      ],
+      "generated_sql": "SELECT Country FROM Customer GROUP BY Country ORDER BY COUNT(*) DESC LIMIT 1;",
+      "latency_ms": 816.6,
+      "validation": {
+        "safe": true,
+        "columns": true,
+        "join_path": true
+      },
+      "result_columns": [
+        "Country"
+      ],
+      "result_rows": [
+        [
+          "USA"
+        ]
+      ],
+      "rule_fallback_sql": null,
+      "engine": "llm"
+    },
+    {
+      "question": "美国有多少客户？",
+      "response_id": "5dc8931a-8b70-4ddf-80a1-73736a41253a",
+      "usage_tokens": {
+        "completion_tokens": 11,
+        "prompt_tokens": 223,
+        "total_tokens": 234,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 0,
+          "image_tokens": null,
+          "text_tokens": null
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 223
+      },
+      "tables_provided": [
+        "Customer"
+      ],
+      "generated_sql": "SELECT COUNT(*) FROM Customer WHERE Country = 'USA';",
+      "latency_ms": 396.7,
+      "validation": {
+        "safe": true,
+        "columns": true,
+        "join_path": true
+      },
+      "result_columns": [
+        "COUNT(*)"
+      ],
+      "result_rows": [
+        [
+          13
+        ]
+      ],
+      "rule_fallback_sql": "SELECT COUNT(*) FROM Customer WHERE Country='USA';",
+      "engine": "llm"
+    },
+    {
+      "question": "消费总额最高的前3个客户是谁？",
+      "response_id": "e6989e52-4aea-4f49-8bfc-60b1c0e4344a",
+      "usage_tokens": {
+        "completion_tokens": 59,
+        "prompt_tokens": 321,
+        "total_tokens": 380,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 128,
+          "image_tokens": null,
+          "text_tokens": null
+        },
+        "prompt_cache_hit_tokens": 128,
+        "prompt_cache_miss_tokens": 193
+      },
+      "tables_provided": [
+        "Customer",
+        "Invoice"
+      ],
+      "generated_sql": "SELECT c.FirstName, c.LastName, SUM(i.Total) AS TotalSpent FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId GROUP BY c.CustomerId, c.FirstName, c.LastName ORDER BY TotalSpent DESC LIMIT 3;",
+      "latency_ms": 857.1,
+      "validation": {
+        "safe": true,
+        "columns": true,
+        "join_path": true
+      },
+      "result_columns": [
+        "FirstName",
+        "LastName",
+        "TotalSpent"
+      ],
+      "result_rows": [
+        [
+          "Helena",
+          "Holý",
+          49.62
+        ],
+        [
+          "Richard",
+          "Cunningham",
+          47.62
+        ],
+        [
+          "Luis",
+          "Rojas",
+          46.62
+        ]
+      ],
+      "rule_fallback_sql": null,
+      "engine": "llm"
+    }
+  ]
+}

@@ -29,6 +29,7 @@ cup8project/
 │  ├─ llm_nl2sql.py      # NL2SQL 主流程（LLM 生成 + 自我修正 + 规则兜底）
 │  ├─ join_graph.py      # 外键关系图 + BFS 自动补全 JOIN 路径
 │  ├─ join_validator.py  # JOIN 语义校验（拦截笛卡尔积 / 错误关联键）
+│  ├─ explainer.py       # 确定性答案 / 查询解释（模板 + SQL AST，不二次调 LLM）
 │  ├─ schema_linking.py  # 规则 Schema Linking（实体锚点 / 字段 / 值）
 │  ├─ validator.py       # SQL 安全校验（拦截 DROP/DELETE/UPDATE 等写操作）
 │  ├─ schema_validator.py# 表 / 字段真实存在校验
@@ -49,13 +50,14 @@ cup8project/
 ├─ knowledge_base/       # RAG 知识库文档
 │  ├─ chinook_guide.pdf
 │  └─ chinook_guide.txt
-├─ tests/                # pytest（NL2SQL / JOIN 图 / JOIN 校验 / 合成泛化 / RAG / PDF / Agent）
-├─ evaluation/           # 评估、泛化与性能实验
+├─ tests/                # pytest（NL2SQL / JOIN 图 / JOIN 校验 / 解释器 / 自修正 / 合成泛化 / RAG / PDF / Agent）
+├─ evaluation/           # 评估、泛化、性能实验与 LLM 证据
 │  ├─ nl2sql_eval.py     # 基线 vs 优化，输出 5 项指标
 │  ├─ analyze_oos.py     # 离线分析“超纲 / 脑补表”
 │  ├─ perf_eval.py       # 多规模性能测试（分阶段计时 + 空间）
+│  ├─ llm_smoke_test.py  # LLM 真实调用脱敏证据（response_id / token 用量 / 耗时）
 │  ├─ synth/             # 合成业务库（泛化实验，见第六节）
-│  └─ results/           # 评估与性能结果 JSON
+│  └─ results/           # 评估、性能与 LLM 证据 JSON
 ├─ .env.example          # 环境变量模板
 ├─ requirements.txt
 └─ README.md
@@ -115,13 +117,18 @@ python nl2sql/llm_nl2sql.py
 pytest tests/ -q
 ```
 
-- **已配置 `LLM_API_KEY`（本机实测 86 passed）**：离线 + LLM 端到端全部运行；
+- **已配置 `LLM_API_KEY`（本机实测 97 passed）**：离线 + LLM 端到端全部运行；
 - **未配置 key**：离线测试通过，LLM 端到端用例自动 `skip`（属正常现象，
   对外结论需注明“LLM 集成测试在无 key 交付版处于跳过状态”）。
 
 ---
 
 ## 六、NL2SQL 评估（中级任务：精准 Schema Linking + 高质量多表 JOIN）
+
+**LLM 真实调用证据**：运行 `python evaluation/llm_smoke_test.py` 生成
+`evaluation/results/llm_smoke_test.json`，记录 provider 主机、model、response_id、
+token 用量、耗时与结果（不含 Key）。其中“哪个国家客户最多？”规则兜底为 null，
+仍由真实 LLM 调用返回 USA，证明结果来自 LLM 而非规则。
 
 ```powershell
 # 在线评估：基线 vs 优化（需 key，结果保存到 evaluation/results/）
@@ -139,8 +146,12 @@ python evaluation/analyze_oos.py
 | 超纲表引用（脑补未提供表）问题数 | 2 / 11 | **0 / 11** |
 | 执行准确率 | 100% | 100% |
 | 首次成功率 | 100% | 100% |
-| 自我修正成功率 | 0% | 0% |
+| 自我修正触发次数 | 0 / 11 | 0 / 11 |
 | 平均时延 | 0.61 s | 0.68 s |
+
+> 自我修正机制（校验失败把报错回喂模型，最多 3 次）已实现，并通过
+> `tests/test_self_correction.py` 的故障注入测试验证有效（首次返回笛卡尔积 /
+> 错误关联，第二次修正成功，attempts=2）；标准 11 题均首轮成功，未自然触发。
 
 **口径说明（重要）**：Chinook 是公开教学库，基座模型在训练数据中见过，
 基线在两个跨表问题（“消费前 5 客户”“单首歌曲最高销量”）上**凭记忆脑补**
@@ -217,6 +228,8 @@ result = NL2SQL().run("美国有多少客户？", use_join_graph=True)
   "data":  [["值"]],
   "tables": ["Customer"],
   "attempts": 1,
+  "answer": "美国共有 13 客户。",
+  "explanation": "从 Customer（客户）中查询；按条件 Country='USA' 过滤；使用聚合 COUNT(...)。",
   "trace": [{"step": "步骤名", "detail": "详情"}],
   "message": "",
   "error": ""
@@ -225,6 +238,7 @@ result = NL2SQL().run("美国有多少客户？", use_join_graph=True)
 
 - `rows` 与 `data` 内容相同（`data` 为兼容别名）；
 - `attempts`：LLM 尝试次数（1–3），`0` 表示规则兜底；
+- `answer`：确定性模板生成的一句中文答案；`explanation`：由 SQL AST 生成的查询解释；
 - 失败时 `success=false`，错误信息同时放在 `message` 与 `error`。
 
 **RAG**

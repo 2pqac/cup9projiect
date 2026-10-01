@@ -29,6 +29,7 @@ from database.executor import execute_sql
 from nl2sql.validator import validate_sql
 from nl2sql.schema_validator import validate_columns
 from nl2sql.join_validator import validate_join_path
+from nl2sql.explainer import build_query_logic, build_answer
 from nl2sql.schema_linking import schema_link
 from nl2sql.join_graph import (
     build_graph,
@@ -175,7 +176,7 @@ class NL2SQL:
     # 4. 执行一条已通过校验的 SQL，统一返回结构
     # --------------------------------------------------------
 
-    def _execute_and_pack(self, sql, trace, via, tables=None, attempts=1):
+    def _execute_and_pack(self, sql, trace, via, tables=None, attempts=1, question=""):
         safe = validate_sql(sql)
         if not safe["valid"]:
             return {"success": False, "message": safe["message"], "error": safe["message"], "trace": trace}
@@ -190,6 +191,11 @@ class NL2SQL:
 
         result = execute_sql(sql)
         trace.append({"step": via, "detail": f"{len(result['rows'])} 行结果"})
+
+        answer = build_answer(question, result["columns"], result["rows"])
+        explanation = build_query_logic(sql)["summary"]
+        trace.append({"step": "生成答案与查询解释", "detail": answer})
+
         return {
             "success": True,
             "sql": sql.strip(),
@@ -198,6 +204,8 @@ class NL2SQL:
             "data": result["rows"],
             "tables": tables or [],
             "attempts": attempts,
+            "answer": answer,
+            "explanation": explanation,
             "trace": trace,
         }
 
@@ -279,7 +287,7 @@ class NL2SQL:
 
                     return self._execute_and_pack(
                         sql, trace, "执行 SQL 成功",
-                        tables=related, attempts=attempt + 1,
+                        tables=related, attempts=attempt + 1, question=question,
                     )
                 except Exception as e:
                     feedback = str(e)
@@ -291,7 +299,7 @@ class NL2SQL:
                 trace.append({"step": "LLM 失败，降级规则兜底", "detail": fallback})
                 return self._execute_and_pack(
                     fallback, trace, "规则兜底执行成功",
-                    tables=related, attempts=0,
+                    tables=related, attempts=0, question=question,
                 )
             msg = feedback or "LLM 生成失败"
             return {
@@ -306,7 +314,7 @@ class NL2SQL:
         if fallback:
             return self._execute_and_pack(
                 fallback, trace, "规则兜底执行成功",
-                tables=related, attempts=0,
+                tables=related, attempts=0, question=question,
             )
         return {
             "success": False,

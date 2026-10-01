@@ -48,7 +48,13 @@ class Cup8Agent:
             self.show_trace(result.get("trace", []))
             return
 
-        print("生成 SQL：")
+        print("答案：")
+        print(result.get("answer"))
+
+        print("\n查询解释：")
+        print(result.get("explanation"))
+
+        print("\n生成 SQL：")
         print(result.get("sql"))
 
         print("\n查询结果：")
@@ -58,6 +64,8 @@ class Cup8Agent:
         rows = result.get("data", result.get("rows", []))
         for row in rows:
             print(" | ".join(str(v) for v in row))
+
+        print("\n数据来源表：", "、".join(result.get("tables", [])))
 
         self.show_trace(result.get("trace", []))
 
