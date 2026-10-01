@@ -1,7 +1,7 @@
 ﻿A 模块本机测试记录（有 Key）
-Git commit: 981d741fd8ca817996369cd911b31309884b6b10
+Git commit: dde11883e645e1a98b3e954788e3456b2b3ad499
 Python: Python 3.13.5
-Date: 2026-10-01 23:09
+Date: 2026-10-01 23:22
 Command: .\.venv\Scripts\python.exe -m pytest tests/ -v
 ============================================================
 ============================= test session starts =============================
@@ -109,5 +109,5 @@ tests/test_synth_generalization.py::test_connect_member_with_amount PASSED [ 97%
 tests/test_synth_generalization.py::test_connect_product_with_qty PASSED [ 98%]
 tests/test_synth_generalization.py::test_connect_member_product_adds_intermediate PASSED [100%]
 
-============================= 97 passed in 11.96s =============================
+============================= 97 passed in 12.93s =============================
 
