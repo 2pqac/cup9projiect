@@ -1,0 +1,363 @@
+{
+  "generated_at": "2026-10-01T18:37:54",
+  "baseline": {
+    "summary": {
+      "样本数": 11,
+      "执行准确率(%)": 100.0,
+      "Schema命中率(%)": 81.8,
+      "首次成功率(%)": 100.0,
+      "自我修正成功率(%)": 0.0,
+      "平均时延(s)": 0.61
+    },
+    "records": [
+      {
+        "question": "美国有多少客户？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.85,
+        "actual_sql": "SELECT COUNT(*) FROM Customer WHERE Country = 'USA';",
+        "tables": [
+          "Customer"
+        ],
+        "message": ""
+      },
+      {
+        "question": "每个国家分别有多少客户？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.33,
+        "actual_sql": "SELECT Country, COUNT(CustomerId) FROM Customer GROUP BY Country;",
+        "tables": [
+          "Customer"
+        ],
+        "message": ""
+      },
+      {
+        "question": "所有发票的总金额是多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.29,
+        "actual_sql": "SELECT SUM(Total) FROM Invoice;",
+        "tables": [
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "发票的平均金额是多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.63,
+        "actual_sql": "SELECT AVG(Total) FROM Invoice;",
+        "tables": [
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "金额最高的一张发票是多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.3,
+        "actual_sql": "SELECT MAX(Total) FROM Invoice;",
+        "tables": [
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "2023年开了多少张发票？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.58,
+        "actual_sql": "SELECT COUNT(*) FROM Invoice WHERE InvoiceDate LIKE '2023%';",
+        "tables": [
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "姓Smith的客户有多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.73,
+        "actual_sql": "SELECT COUNT(*) FROM Customer WHERE LastName = 'Smith';",
+        "tables": [
+          "Customer"
+        ],
+        "message": ""
+      },
+      {
+        "question": "哪个歌手的专辑最多？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.72,
+        "actual_sql": "SELECT Artist.Name, COUNT(Album.AlbumId) FROM Artist JOIN Album ON Artist.ArtistId = Album.ArtistId GROUP BY Artist.ArtistId ORDER BY COUNT(Album.AlbumId) DESC LIMIT 1;",
+        "tables": [
+          "Artist",
+          "Album"
+        ],
+        "message": ""
+      },
+      {
+        "question": "哪种音乐类型的歌曲最多？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.64,
+        "actual_sql": "SELECT Genre.Name, COUNT(Track.TrackId) FROM Track JOIN Genre ON Track.GenreId = Genre.GenreId GROUP BY Track.GenreId ORDER BY COUNT(Track.TrackId) DESC LIMIT 1",
+        "tables": [
+          "Track",
+          "Genre"
+        ],
+        "message": ""
+      },
+      {
+        "question": "消费总额最高的前5个客户是谁？",
+        "success": true,
+        "match": true,
+        "schema_hit": false,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.96,
+        "actual_sql": "SELECT c.FirstName, c.LastName, SUM(i.Total) AS TotalSpent FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId GROUP BY c.CustomerId ORDER BY TotalSpent DESC LIMIT 5;",
+        "tables": [
+          "Customer"
+        ],
+        "message": ""
+      },
+      {
+        "question": "单首歌曲的最高销量是多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": false,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.64,
+        "actual_sql": "SELECT MAX(total) FROM (SELECT SUM(Quantity) AS total FROM InvoiceLine GROUP BY TrackId);",
+        "tables": [
+          "Track"
+        ],
+        "message": ""
+      }
+    ]
+  },
+  "optimized": {
+    "summary": {
+      "样本数": 11,
+      "执行准确率(%)": 100.0,
+      "Schema命中率(%)": 100.0,
+      "首次成功率(%)": 100.0,
+      "自我修正成功率(%)": 0.0,
+      "平均时延(s)": 0.68
+    },
+    "records": [
+      {
+        "question": "美国有多少客户？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.57,
+        "actual_sql": "SELECT COUNT(*) FROM Customer WHERE Country = 'USA';",
+        "tables": [
+          "Customer"
+        ],
+        "message": ""
+      },
+      {
+        "question": "每个国家分别有多少客户？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.47,
+        "actual_sql": "SELECT Country, COUNT(CustomerId) FROM Customer GROUP BY Country;",
+        "tables": [
+          "Customer"
+        ],
+        "message": ""
+      },
+      {
+        "question": "所有发票的总金额是多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.43,
+        "actual_sql": "SELECT SUM(Total) FROM Invoice;",
+        "tables": [
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "发票的平均金额是多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.52,
+        "actual_sql": "SELECT AVG(Total) FROM Invoice;",
+        "tables": [
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "金额最高的一张发票是多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 1.41,
+        "actual_sql": "SELECT MAX(Total) FROM Invoice;",
+        "tables": [
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "2023年开了多少张发票？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.64,
+        "actual_sql": "SELECT COUNT(*) FROM Invoice WHERE InvoiceDate LIKE '2023%';",
+        "tables": [
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "姓Smith的客户有多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.5,
+        "actual_sql": "SELECT COUNT(*) FROM Customer WHERE LastName = 'Smith';",
+        "tables": [
+          "Customer"
+        ],
+        "message": ""
+      },
+      {
+        "question": "哪个歌手的专辑最多？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.84,
+        "actual_sql": "SELECT Artist.Name, COUNT(Album.AlbumId) FROM Artist JOIN Album ON Artist.ArtistId = Album.ArtistId GROUP BY Artist.ArtistId ORDER BY COUNT(Album.AlbumId) DESC LIMIT 1;",
+        "tables": [
+          "Artist",
+          "Album"
+        ],
+        "message": ""
+      },
+      {
+        "question": "哪种音乐类型的歌曲最多？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 1.0,
+        "actual_sql": "SELECT Genre.Name, COUNT(Track.TrackId) FROM Track JOIN Genre ON Track.GenreId = Genre.GenreId GROUP BY Track.GenreId ORDER BY COUNT(Track.TrackId) DESC LIMIT 1",
+        "tables": [
+          "Track",
+          "Genre"
+        ],
+        "message": ""
+      },
+      {
+        "question": "消费总额最高的前5个客户是谁？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.63,
+        "actual_sql": "SELECT c.FirstName, c.LastName, SUM(i.Total) AS TotalSpent FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId GROUP BY c.CustomerId ORDER BY TotalSpent DESC LIMIT 5;",
+        "tables": [
+          "Customer",
+          "Invoice"
+        ],
+        "message": ""
+      },
+      {
+        "question": "单首歌曲的最高销量是多少？",
+        "success": true,
+        "match": true,
+        "schema_hit": true,
+        "attempts": 1,
+        "first_pass": true,
+        "self_correct_success": false,
+        "latency": 0.44,
+        "actual_sql": "SELECT MAX(total) FROM (SELECT SUM(Quantity) AS total FROM InvoiceLine GROUP BY TrackId);",
+        "tables": [
+          "Track",
+          "InvoiceLine"
+        ],
+        "message": ""
+      }
+    ]
+  }
+}

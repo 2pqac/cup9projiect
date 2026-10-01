@@ -15,18 +15,27 @@ LLM 版 NL2SQL（自然语言转 SQL）
 import json
 import os
 import re
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import OpenAI
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from database.executor import execute_sql
 from nl2sql.validator import validate_sql
 from nl2sql.schema_validator import validate_columns
 from nl2sql.schema_linking import schema_link
+from nl2sql.join_graph import (
+    build_graph,
+    connect_tables,
+    detect_metric_tables,
+)
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_JSON = PROJECT_ROOT / "database" / "schema.json"
 
 load_dotenv(PROJECT_ROOT / ".env")
@@ -80,6 +89,9 @@ class NL2SQL:
 
         with open(SCHEMA_JSON, encoding="utf-8") as f:
             self.schema = json.load(f)
+
+        # 外键关系图：用于 BFS 自动补全多表 JOIN 路径
+        self.graph = build_graph(self.schema)
 
     # --------------------------------------------------------
     # 1. 组装相关表的 CREATE 结构
@@ -162,14 +174,14 @@ class NL2SQL:
     # 4. 执行一条已通过校验的 SQL，统一返回结构
     # --------------------------------------------------------
 
-    def _execute_and_pack(self, sql, trace, via):
+    def _execute_and_pack(self, sql, trace, via, tables=None, attempts=1):
         safe = validate_sql(sql)
         if not safe["valid"]:
-            return {"success": False, "message": safe["message"], "trace": trace}
+            return {"success": False, "message": safe["message"], "error": safe["message"], "trace": trace}
 
         schema_ok = validate_columns(sql)
         if not schema_ok["valid"]:
-            return {"success": False, "message": schema_ok["message"], "trace": trace}
+            return {"success": False, "message": schema_ok["message"], "error": schema_ok["message"], "trace": trace}
 
         result = execute_sql(sql)
         trace.append({"step": via, "detail": f"{len(result['rows'])} 行结果"})
@@ -179,6 +191,8 @@ class NL2SQL:
             "columns": result["columns"],
             "rows": result["rows"],
             "data": result["rows"],
+            "tables": tables or [],
+            "attempts": attempts,
             "trace": trace,
         }
 
@@ -186,22 +200,43 @@ class NL2SQL:
     # 5. 主流程
     # --------------------------------------------------------
 
-    def run(self, question):
+    def run(self, question, use_join_graph=True):
         trace = [{"step": "理解问题", "detail": question}]
 
-        # Schema Linking 粗召回
-        related = []
+        # 1) 实体锚点表：规则召回（客户 / 歌曲 / 歌手 ...）
+        anchors = []
         try:
             link = schema_link(question)
-            related = link["related_tables"]
+            anchors = link["related_tables"]
             trace.append({
-                "step": "Schema Linking 召回相关表",
-                "detail": "、".join(related) if related else "未召回到，使用全部表",
+                "step": "Schema Linking 召回实体表",
+                "detail": "、".join(anchors) if anchors else "未召回到实体表",
             })
         except Exception:
             pass
-        if not related:
-            related = list(self.schema["tables"].keys())
+
+        # 2) 指标字段所在表：指标词 -> 字段 -> 自动定位（消费额 / 销量 ...）
+        metric_tables = detect_metric_tables(question, self.schema)
+
+        if use_join_graph:
+            # 3a) 外键图 + BFS 自动补全 JOIN 路径（含中间表，不写特例）
+            required = list(anchors) + metric_tables
+            if required:
+                related, join_edges = connect_tables(self.graph, required)
+                if join_edges:
+                    trace.append({
+                        "step": "外键路径补全 (BFS)",
+                        "detail": "；".join(
+                            f'{e["left"]}→{e["right"]}' for e in join_edges
+                        ),
+                    })
+            else:
+                related = list(self.schema["tables"].keys())
+        else:
+            # 3b) 基线：只用规则召回的锚点表，不做外键路径补全
+            related = list(dict.fromkeys(anchors))
+            if not related:
+                related = list(self.schema["tables"].keys())
 
         schema_text = self.build_schema_text(related)
 
@@ -229,7 +264,8 @@ class NL2SQL:
                         continue
 
                     return self._execute_and_pack(
-                        sql, trace, "执行 SQL 成功"
+                        sql, trace, "执行 SQL 成功",
+                        tables=related, attempts=attempt + 1,
                     )
                 except Exception as e:
                     feedback = str(e)
@@ -240,11 +276,14 @@ class NL2SQL:
             if fallback:
                 trace.append({"step": "LLM 失败，降级规则兜底", "detail": fallback})
                 return self._execute_and_pack(
-                    fallback, trace, "规则兜底执行成功"
+                    fallback, trace, "规则兜底执行成功",
+                    tables=related, attempts=0,
                 )
+            msg = feedback or "LLM 生成失败"
             return {
                 "success": False,
-                "message": feedback or "LLM 生成失败",
+                "message": msg,
+                "error": msg,
                 "trace": trace,
             }
 
@@ -252,11 +291,13 @@ class NL2SQL:
         fallback = self.fallback_generate(question)
         if fallback:
             return self._execute_and_pack(
-                fallback, trace, "规则兜底执行成功"
+                fallback, trace, "规则兜底执行成功",
+                tables=related, attempts=0,
             )
         return {
             "success": False,
             "message": "未配置 LLM_API_KEY，且规则未命中该问题",
+            "error": "未配置 LLM_API_KEY，且规则未命中该问题",
             "trace": trace,
         }
 
