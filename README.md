@@ -117,7 +117,7 @@ python nl2sql/llm_nl2sql.py
 pytest tests/ -q
 ```
 
-- **已配置 `LLM_API_KEY`（本机实测 97 passed）**：离线 + LLM 端到端全部运行；
+- **已配置 `LLM_API_KEY`（本机实测 104 passed，commit a51145d）**：离线 + LLM 端到端全部运行；
 - **未配置 key**：离线测试通过，LLM 端到端用例自动 `skip`（属正常现象，
   对外结论需注明“LLM 集成测试在无 key 交付版处于跳过状态”）。
 
@@ -203,6 +203,26 @@ python evaluation/analyze_oos.py
 - **瓶颈为 LLM 网络往返（约 0.5–0.6 s，占端到端 95% 以上）**，SQL 执行即使
   40 倍数据也仅约 16 ms。优化方向：prompt 缓存、连接复用、裁剪无关表、流式返回、
   外键 / 过滤列建索引、高频结果缓存。
+
+### 6.4 中级任务1：要素识别与问题改写（口语 / 别名 / 错别字归一）
+
+真实提问不规范：用户会说“顾客 / 用户 / 买家”“帝都 / 京城”“哥手 / 专集 / 法票”
+“上个礼拜”，直接做 Schema Linking 容易错召回表。本模块在解析前先做确定性归一：
+
+- `nl2sql/schema_linking.py` 的 `normalize_question_with_changes()` 把口语词、
+  别名、错别字改写成标准说法，并返回逐条“变更明细”；`schema_link()` 额外带回
+  `original_question` / `question_changes`，便于答辩展示“原问 → 改写后”；
+- 给 Invoice 补充“收入 / 消费 / 金额”等业务别名，避免把金额类问题错召到 Customer。
+
+对比实验 `evaluation/question_rewrite_eval.py`（10 个不规范问题）：
+
+| 方案 | 表定位命中率 |
+| --- | --- |
+| 不归一化（基线） | 2 / 10 |
+| 归一化后 | **10 / 10** |
+
+离线测试见 `tests/test_schema_linking_synonyms.py`（7 项）。归一表为确定性规则，
+不调用 LLM、可离线复现。
 
 ---
 
