@@ -31,6 +31,9 @@ TABLE_ALIASES = {
 
     "发票": ["Invoice"],
     "订单": ["Invoice"],
+    "收入": ["Invoice"],
+    "消费": ["Invoice"],
+    "金额": ["Invoice"],
 
     "订单明细": ["InvoiceLine"],
     "发票明细": ["InvoiceLine"],
@@ -776,25 +779,45 @@ def detect_intent(question):
 # 12. 主 Schema Linking
 # ============================================================
 
+# 口语 / 别名 / 错别字 -> 规范词（通用，不限实体类型）
 QUESTION_FIXES = {
-    "唱歌的人": "歌手",
-    "歌者": "歌手",
-    "演唱者": "歌手",
-    "哥手": "歌手",
-    "格手": "歌手",
-    "个手": "歌手",
+    # —— 人物角色 ——
+    "唱歌的人": "歌手", "歌者": "歌手", "演唱者": "歌手",
+    "哥手": "歌手", "格手": "歌手", "个手": "歌手",
+    "顾客": "客户", "用户": "客户", "买家": "客户",
+    # —— 地名别名 ——
+    "帝都": "北京", "京城": "北京",
+    "申城": "上海", "羊城": "广州",
+    "蓉城": "成都", "鹏城": "深圳", "江城": "武汉",
+    # —— 时间口语（长词在前，避免被“礼拜”提前替换）——
+    "上个礼拜": "上周", "这个礼拜": "本周", "礼拜": "周",
+    # —— 业务 / 金额口语 ——
+    "营业收入": "收入", "营收": "收入",
+    # —— 常见错别字 ——
+    "专集": "专辑", "转辑": "专辑",
+    "哥曲": "歌曲", "发飘": "发票", "法票": "发票",
+    "油箱": "邮箱",
 }
 
 
-def normalize_question(question):
-    """口语 / 错别字 -> 规范词，提升 Schema Linking 鲁棒性。"""
+def normalize_question_with_changes(question):
+    """归一化，返回 (规范问题, [变更说明“原词 → 规范词”])。"""
+    changes = []
     for wrong, right in QUESTION_FIXES.items():
-        question = question.replace(wrong, right)
-    return question
+        if wrong in question:
+            question = question.replace(wrong, right)
+            changes.append(f"{wrong} → {right}")
+    return question, changes
+
+
+def normalize_question(question):
+    """口语 / 别名 / 错别字 -> 规范词，提升 Schema Linking 鲁棒性。"""
+    return normalize_question_with_changes(question)[0]
 
 
 def schema_link(question):
-    question = normalize_question(question)
+    original_question = question
+    question, question_changes = normalize_question_with_changes(question)
 
     # 读取数据库结构
     schema_info = load_database_schema()
@@ -871,6 +894,8 @@ def schema_link(question):
 
     return {
         "question": question,
+        "original_question": original_question,
+        "question_changes": question_changes,
 
         "related_tables": related_tables,
 

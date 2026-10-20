@@ -1,0 +1,195 @@
+{
+  "task": "中级任务1 要素精准识别与问题改写",
+  "total": 10,
+  "baseline_hit_rate": "2/10",
+  "optimized_hit_rate": "10/10",
+  "records": [
+    {
+      "raw_question": "哪个唱歌的人专集最多",
+      "normalized_question": "哪个歌手专辑最多",
+      "changes": [
+        "唱歌的人 → 歌手",
+        "专集 → 专辑"
+      ],
+      "expected_tables": [
+        "Artist",
+        "Album"
+      ],
+      "baseline_tables": [],
+      "optimized_tables": [
+        "Artist",
+        "Album"
+      ],
+      "baseline_hit": false,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "哪个哥手的专集最多",
+      "normalized_question": "哪个歌手的专辑最多",
+      "changes": [
+        "哥手 → 歌手",
+        "专集 → 专辑"
+      ],
+      "expected_tables": [
+        "Artist",
+        "Album"
+      ],
+      "baseline_tables": [],
+      "optimized_tables": [
+        "Artist",
+        "Album"
+      ],
+      "baseline_hit": false,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "帝都有多少顾客",
+      "normalized_question": "北京有多少客户",
+      "changes": [
+        "顾客 → 客户",
+        "帝都 → 北京"
+      ],
+      "expected_tables": [
+        "Customer"
+      ],
+      "baseline_tables": [
+        "Customer"
+      ],
+      "optimized_tables": [
+        "Customer"
+      ],
+      "baseline_hit": true,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "申城有多少用户",
+      "normalized_question": "上海有多少客户",
+      "changes": [
+        "用户 → 客户",
+        "申城 → 上海"
+      ],
+      "expected_tables": [
+        "Customer"
+      ],
+      "baseline_tables": [],
+      "optimized_tables": [
+        "Customer"
+      ],
+      "baseline_hit": false,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "哪个顾客的发票金额最高",
+      "normalized_question": "哪个客户的发票金额最高",
+      "changes": [
+        "顾客 → 客户"
+      ],
+      "expected_tables": [
+        "Customer",
+        "Invoice"
+      ],
+      "baseline_tables": [
+        "Customer",
+        "Invoice"
+      ],
+      "optimized_tables": [
+        "Customer",
+        "Invoice"
+      ],
+      "baseline_hit": true,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "上个礼拜的营收是多少",
+      "normalized_question": "上周的收入是多少",
+      "changes": [
+        "上个礼拜 → 上周",
+        "营收 → 收入"
+      ],
+      "expected_tables": [
+        "Invoice"
+      ],
+      "baseline_tables": [],
+      "optimized_tables": [
+        "Invoice"
+      ],
+      "baseline_hit": false,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "哪个歌手的哥曲最多",
+      "normalized_question": "哪个歌手的歌曲最多",
+      "changes": [
+        "哥曲 → 歌曲"
+      ],
+      "expected_tables": [
+        "Artist",
+        "Track"
+      ],
+      "baseline_tables": [
+        "Artist"
+      ],
+      "optimized_tables": [
+        "Artist",
+        "Track"
+      ],
+      "baseline_hit": false,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "法票总额是多少",
+      "normalized_question": "发票总额是多少",
+      "changes": [
+        "法票 → 发票"
+      ],
+      "expected_tables": [
+        "Invoice"
+      ],
+      "baseline_tables": [],
+      "optimized_tables": [
+        "Invoice"
+      ],
+      "baseline_hit": false,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "哪个买家消费最多",
+      "normalized_question": "哪个客户消费最多",
+      "changes": [
+        "买家 → 客户"
+      ],
+      "expected_tables": [
+        "Customer",
+        "Invoice"
+      ],
+      "baseline_tables": [
+        "Invoice"
+      ],
+      "optimized_tables": [
+        "Customer",
+        "Invoice"
+      ],
+      "baseline_hit": false,
+      "optimized_hit": true
+    },
+    {
+      "raw_question": "演唱者的转辑数量",
+      "normalized_question": "歌手的专辑数量",
+      "changes": [
+        "演唱者 → 歌手",
+        "转辑 → 专辑"
+      ],
+      "expected_tables": [
+        "Artist",
+        "Album"
+      ],
+      "baseline_tables": [],
+      "optimized_tables": [
+        "Artist",
+        "Album"
+      ],
+      "baseline_hit": false,
+      "optimized_hit": true
+    }
+  ]
+}

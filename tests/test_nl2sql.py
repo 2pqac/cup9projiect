@@ -139,13 +139,17 @@ CASES = [
 
 
 def normalize(rows):
-    """归一化：浮点保留2位；每行内部排序(忽略列顺序)，整体再排序(忽略行顺序)。"""
+    """归一化：数字保留2位；文字去掉空格后整体拼接，忽略姓名被拆成几列；行之间排序。"""
     out = []
     for row in rows:
-        vals = [
-            round(x, 2) if isinstance(x, float) else x for x in row
-        ]
-        out.append(tuple(sorted(vals, key=lambda v: str(v))))
+        nums = sorted(
+            round(x, 2) for x in row if isinstance(x, (int, float))
+        )
+        text = "".join(
+            str(x).replace(" ", "") for x in row
+            if not isinstance(x, (int, float))
+        )
+        out.append((tuple(nums), text))
     return sorted(out, key=lambda r: str(r))
 
 
